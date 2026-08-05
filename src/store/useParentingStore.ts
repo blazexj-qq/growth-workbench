@@ -28,6 +28,7 @@ export interface ParentingRecord {
 interface ParentingState {
   records: ParentingRecord[]
   addRecord: (r: Omit<ParentingRecord, 'id'> & { id?: string }) => void
+  updateRecord: (id: string, patch: Partial<ParentingRecord>) => void
   deleteRecord: (id: string) => void
   clearRecords: () => void
   syncFromCloud: () => Promise<{ ok: boolean; count?: number; error?: string }>
@@ -54,6 +55,7 @@ export const useParentingStore = create<ParentingState>()(
         },
       ],
       addRecord: (r) => set((s) => ({ records: [...s.records, { ...r, id: (r as any).id || uid() }] })),
+      updateRecord: (id, patch) => set((s) => ({ records: s.records.map((x) => x.id === id ? { ...x, ...patch } : x) })),
       deleteRecord: (id) => set((s) => ({ records: s.records.filter((x) => x.id !== id) })),
       clearRecords: () => set({ records: [] }),
       syncFromCloud: async () => {

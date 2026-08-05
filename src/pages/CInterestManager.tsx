@@ -78,13 +78,18 @@ function aggregateByIntelligence(records: InterestRecord[]) {
 }
 
 export default function CInterestManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useInterestStore()
+  const { records, addRecord, updateRecord, deleteRecord, clearRecords, syncFromCloud } = useInterestStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+
+  // 编辑状态
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = !!editingId
+  const resetForm = () => { form.resetFields(); setEditingId(null) }
 
   // 读伴地址（接读伴 ReadingBuddy）
   const [rbUrl, setRbUrlState] = useState(getReadBuddyUrl())
@@ -128,9 +133,57 @@ export default function CInterestManager() {
     msg.success('已保存兴趣记录')
     if (cloudOn) feishuSync.pushInterest([rec as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
   }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch: Partial<InterestRecord> = {
+      date: values.date.format('YYYY-MM-DD'),
+      category: values.category,
+      activity: values.activity || '',
+      spontaneity: values.spontaneity != null && values.spontaneity !== '' ? Number(values.spontaneity) : undefined,
+      immersion: values.immersion != null && values.immersion !== '' ? Number(values.immersion) : undefined,
+      performance: values.performance != null && values.performance !== '' ? Number(values.performance) : undefined,
+      book: values.book || undefined,
+      readMode: values.readMode || undefined,
+      durationMin: values.durationMin != null && values.durationMin !== '' ? Number(values.durationMin) : undefined,
+      amount: values.amount || undefined,
+      comprehension: values.comprehension != null && values.comprehension !== '' ? Number(values.comprehension) : undefined,
+      interest: values.interest != null && values.interest !== '' ? Number(values.interest) : undefined,
+      parentObs: values.parentObs || '',
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    msg.success('已更新兴趣记录')
+    setEditingId(null)
+    form.resetFields()
+    if (cloudOn) {
+      const full = useInterestStore.getState().records.find((r) => r.id === editingId)
+      if (full) feishuSync.pushInterest([full as any]).catch(() => {})
+    }
+  }
   const onDelete = (r: InterestRecord) => {
+    if (editingId === r.id) resetForm()
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteInterest([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
+  }
+  const onEdit = (r: InterestRecord) => {
+    setEditingId(r.id)
+    form.setFieldsValue({
+      date: (window as any).dayjs ? (window as any).dayjs(r.date) : r.date,
+      category: r.category,
+      activity: r.activity,
+      durationMin: r.durationMin,
+      interest: r.interest,
+      spontaneity: r.spontaneity,
+      immersion: r.immersion,
+      performance: r.performance,
+      book: r.book,
+      readMode: r.readMode,
+      amount: r.amount,
+      comprehension: r.comprehension,
+      parentObs: r.parentObs,
+      note: r.note,
+    })
+    msg.info('已载入该记录，修改后点「更新」即可')
   }
 
   // 表格列
@@ -144,14 +197,36 @@ export default function CInterestManager() {
         </Tag>
       ) : '-'
     },
-    { title: '活动', dataIndex: 'activity', ellipsis: true, render: (v: string, r) => v || r.book || '-' },
+    { title: '活动', dataIndex: 'activity', width: 200,
+      render: (v: string, r) => {
+        // 活动列分两行：主标题=具体活动名（必填），副标题=书名/阅读方式（仅阅读类有）
+        if (!v && !r.book) return '-'
+        return (
+          <div style={{ lineHeight: 1.35 }}>
+            <div style={{ fontWeight: 500, color: v ? '#0F172A' : '#94A3B8' }}>{v || '（未填具体活动）'}</div>
+            {r.book && (
+              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                📚《{r.book}》{r.readMode && <Tag style={{ marginLeft: 4, fontSize: 10, lineHeight: '14px', padding: '0 4px' }}>{r.readMode}</Tag>}
+              </div>
+            )}
+          </div>
+        )
+      }
+    },
     { title: '时长', width: 64, render: (_, r) => (r.durationMin != null ? `${r.durationMin}′` : '-') },
     { title: '兴趣', width: 60, render: (_, r) => (r.interest != null ? <Tag color="#0EA5A4">{r.interest}</Tag> : '-') },
     { title: '自发', width: 60, render: (_, r) => (r.spontaneity != null ? <Tag color="#10B981">{r.spontaneity}</Tag> : '-') },
     { title: '沉浸', width: 60, render: (_, r) => (r.immersion != null ? <Tag color="#8B5CF6">{r.immersion}</Tag> : '-') },
     { title: '表现', width: 60, render: (_, r) => (r.performance != null ? <Tag color="#F59E0B">{r.performance}</Tag> : '-') },
     { title: '家长观察', dataIndex: 'parentObs', ellipsis: true },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> },
+    { title: '操作', width: 120, fixed: 'right' as const,
+      render: (_, r) => (
+        <Space size={4}>
+          <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+          <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+        </Space>
+      ),
+    },
   ]
 
   // ===== 趋势分析图表 =====
@@ -206,7 +281,7 @@ export default function CInterestManager() {
     }),
     yAxis: Object.assign({}, baseAxis, { type: 'value', min: 0, max: 5, name: '1-5', splitLine, nameTextStyle: { color: '#94A3B8', fontSize: 11 } }),
     series: [
-      { name: '兴趣度', type: 'line', data: seriesFor('interest'), smooth: true, symbolSize: 6, lineStyle: { width: 2.2 }, itemStyle: { color: '#0EA5A4' }, connectNulls: true },
+      { name: '兴趣度', type: 'line', data: seriesFor('interest'), smooth: true, symbolSize: 6, lineStyle: { width: 2.2 }, itemStyle: { color: '#2563EB' }, connectNulls: true },
       { name: '自发性', type: 'line', data: seriesFor('spontaneity'), smooth: true, symbolSize: 6, lineStyle: { width: 2.2 }, itemStyle: { color: '#10B981' }, connectNulls: true },
       { name: '沉浸度', type: 'line', data: seriesFor('immersion'), smooth: true, symbolSize: 6, lineStyle: { width: 2.2 }, itemStyle: { color: '#8B5CF6' }, connectNulls: true },
       { name: '表现', type: 'line', data: seriesFor('performance'), smooth: true, symbolSize: 6, lineStyle: { width: 2.2 }, itemStyle: { color: '#F59E0B' }, connectNulls: true },
@@ -325,8 +400,16 @@ export default function CInterestManager() {
             children: (
               <Row gutter={16}>
                 <Col xs={24} md={9}>
-                  <Card size="small" title="录入一次兴趣/活动">
-                    <Form form={form} layout="vertical" onFinish={onAdd}
+                  <Card
+                    size="small"
+                    title={isEditing ? '编辑该兴趣/活动' : '录入一次兴趣/活动'}
+                    extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null}
+                    style={isEditing ? { borderColor: '#0EA5A4' } : undefined}
+                  >
+                    <Form
+                      form={form}
+                      layout="vertical"
+                      onFinish={isEditing ? onUpdate : onAdd}
                       initialValues={{ category: undefined, readMode: '自主' }}
                     >
                       <Form.Item name="date" label="日期" rules={[{ required: true }]}>
@@ -402,7 +485,7 @@ export default function CInterestManager() {
                       <Form.Item name="note" label="备注（可选）">
                         <Input placeholder="如 自主选书 / 兴趣班 / 比赛" />
                       </Form.Item>
-                      <Button type="primary" htmlType="submit" block>保存</Button>
+                      <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                     </Form>
                   </Card>
                 </Col>
@@ -411,7 +494,7 @@ export default function CInterestManager() {
                     extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}
                   >
                     {records.length ? (
-                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={{ pageSize: 8, size: 'small' }} scroll={{ x: 'max-content' }} />
+                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={{ pageSize: 8, size: 'small' }} scroll={{ x: 'max-content' }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                     ) : <Empty description="还没有记录，先在左侧录入" />}
                   </Card>
                 </Col>

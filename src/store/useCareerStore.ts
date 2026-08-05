@@ -29,6 +29,7 @@ export interface CareerRecord {
 interface CareerState {
   records: CareerRecord[]
   addRecord: (r: Omit<CareerRecord, 'id'> & { id?: string }) => void
+  updateRecord: (id: string, patch: Partial<CareerRecord>) => void
   deleteRecord: (id: string) => void
   clearRecords: () => void
   syncFromCloud: () => Promise<{ ok: boolean; count?: number; error?: string }>
@@ -47,6 +48,7 @@ export const useCareerStore = create<CareerState>()(
         { id: uid(), date: '2026-07-02', title: '对桥梁建筑好奇', domain: '工程技术', source: '亲身体验', thought: '参观桥梁后一直问桥怎么造的', status: '萌芽', note: '' },
       ],
       addRecord: (r) => set((s) => ({ records: [...s.records, { ...r, id: (r as any).id || uid() }] })),
+      updateRecord: (id, patch) => set((s) => ({ records: s.records.map((x) => x.id === id ? { ...x, ...patch } : x) })),
       deleteRecord: (id) => set((s) => ({ records: s.records.filter((x) => x.id !== id) })),
       clearRecords: () => set({ records: [] }),
       syncFromCloud: async () => {

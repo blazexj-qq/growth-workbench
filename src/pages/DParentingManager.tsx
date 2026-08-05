@@ -27,13 +27,18 @@ function moodColor(v?: number): string {
 }
 
 export default function DParentingManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useParentingStore()
+  const { records, addRecord, updateRecord, deleteRecord, clearRecords, syncFromCloud } = useParentingStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+
+  // 编辑状态：null = 新增；string = 正在编辑的记录 id
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = !!editingId
+  const resetForm = () => { form.resetFields(); setEditingId(null) }
 
   // 按日期升序
   const sorted = useMemo(() => [...records].sort((a, b) => a.date.localeCompare(b.date)), [records])
@@ -114,9 +119,43 @@ export default function DParentingManager() {
     msg.success('已保存亲子记录')
     if (cloudOn) feishuSync.pushParenting([rec as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
   }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch: Partial<ParentingRecord> = {
+      date: values.date.format('YYYY-MM-DD'),
+      type: values.type || '其他',
+      durationMin: values.durationMin != null && values.durationMin !== '' ? Number(values.durationMin) : undefined,
+      childMood: values.childMood != null && values.childMood !== '' ? Number(values.childMood) : undefined,
+      parentMood: values.parentMood != null && values.parentMood !== '' ? Number(values.parentMood) : undefined,
+      keyPoint: values.keyPoint || '',
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    msg.success('已更新亲子记录')
+    setEditingId(null)
+    form.resetFields()
+    if (cloudOn) {
+      const full = useParentingStore.getState().records.find((r) => r.id === editingId)
+      if (full) feishuSync.pushParenting([full as any]).catch(() => {})
+    }
+  }
   const onDelete = (r: ParentingRecord) => {
+    if (editingId === r.id) resetForm()
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteParenting([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
+  }
+  const onEdit = (r: ParentingRecord) => {
+    setEditingId(r.id)
+    form.setFieldsValue({
+      date: (window as any).dayjs ? (window as any).dayjs(r.date) : r.date,
+      type: r.type,
+      durationMin: r.durationMin,
+      childMood: r.childMood,
+      parentMood: r.parentMood,
+      keyPoint: r.keyPoint,
+      note: r.note,
+    })
+    msg.info('已载入该记录，修改后点「更新」即可')
   }
 
   const columns: ColumnsType<ParentingRecord> = [
@@ -141,7 +180,12 @@ export default function DParentingManager() {
         </Tooltip>
       ) : '-',
     },
-    { title: '操作', width: 72, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> },
+    { title: '操作', width: 120, fixed: 'right' as const, render: (_, r) => (
+      <Space size={4}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+      </Space>
+    ) },
   ]
 
   return (
@@ -161,8 +205,13 @@ export default function DParentingManager() {
             children: (
               <Row gutter={16}>
                 <Col xs={24} md={8}>
-                  <Card size="small" title="录入一次亲子互动">
-                    <Form form={form} layout="vertical" onFinish={onAdd}>
+                  <Card
+                    size="small"
+                    title={isEditing ? '编辑该亲子互动' : '录入一次亲子互动'}
+                    extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null}
+                    style={isEditing ? { borderColor: '#0EA5A4' } : undefined}
+                  >
+                    <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                       <Form.Item name="date" label="日期" rules={[{ required: true }]}>
                         <DatePicker style={{ width: '100%' }} />
                       </Form.Item>
@@ -184,7 +233,7 @@ export default function DParentingManager() {
                       <Form.Item name="note" label="备注（可选）">
                         <Input placeholder="如 下次可改进的沟通方式" />
                       </Form.Item>
-                      <Button type="primary" htmlType="submit" block>保存</Button>
+                      <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                     </Form>
                   </Card>
                 </Col>
@@ -193,7 +242,7 @@ export default function DParentingManager() {
                     extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}
                   >
                     {records.length ? (
-                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                     ) : <Empty description="还没有记录，先在左侧录入" />}
                   </Card>
                 </Col>
@@ -229,28 +278,29 @@ export default function DParentingManager() {
             children: (
               <Space direction="vertical" style={{ width: '100%' }} size={16}>
                 <Row gutter={12}>
-                  <Col xs={12} sm={8} md={6} lg={4}>
+                  <Col xs={12} sm={12} md={12} lg={6}>
                     <Card size="small">
                       <div style={{ color: '#64748B', fontSize: 12 }}>近7天均时长</div>
                       <div style={{ fontSize: 22, fontWeight: 600, color: '#0EA5A4' }}>{avgDur != null ? `${avgDur}′` : '-'}</div>
                     </Card>
                   </Col>
-                  <Col xs={12} sm={8} md={6} lg={4}>
+                  <Col xs={12} sm={12} md={12} lg={6}>
                     <Card size="small">
                       <div style={{ color: '#64748B', fontSize: 12 }}>近7天孩子情绪</div>
                       <div style={{ fontSize: 22, fontWeight: 600, color: moodColor(avgChild) }}>{avgChild != null ? `${avgChild}/5` : '-'}</div>
                     </Card>
                   </Col>
-                  <Col xs={12} sm={8} md={6} lg={4}>
+                  <Col xs={12} sm={12} md={12} lg={6}>
                     <Card size="small">
                       <div style={{ color: '#64748B', fontSize: 12 }}>近7天家长情绪</div>
                       <div style={{ fontSize: 22, fontWeight: 600, color: moodColor(avgParent) }}>{avgParent != null ? `${avgParent}/5` : '-'}</div>
                     </Card>
                   </Col>
-                  <Col xs={24} sm={8} md={12} lg={12}>
-                    <Card size="small" title="累计互动次数">
-                      <div style={{ fontSize: 22, fontWeight: 600, color: '#0F766E' }}>{records.length}</div>
-                      <div style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>已记录的亲子互动条数（每周 3–5 次即不错）</div>
+                  <Col xs={12} sm={12} md={12} lg={6}>
+                    <Card size="small">
+                      <div style={{ color: '#64748B', fontSize: 12 }}>累计互动次数</div>
+                      <div style={{ fontSize: 22, fontWeight: 600, color: '#0F766E' }}>{records.length}<span style={{ fontSize: 13, color: '#94A3B8', marginLeft: 4 }}>次</span></div>
+                      <div style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>每周 3–5 次即不错</div>
                     </Card>
                   </Col>
                 </Row>
@@ -275,6 +325,8 @@ export default function DParentingManager() {
           }
         ]}
       />
+      {/* 编辑中行高亮 */}
+      <style>{`.row-editing td { background: #F0FDFA !important; }`}</style>
     </div>
   )
 }
