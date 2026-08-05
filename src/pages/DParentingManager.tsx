@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, InputNumber, DatePicker, Button, Table, Tag, Tooltip,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Progress, Select
@@ -147,7 +148,7 @@ export default function DParentingManager() {
   const onEdit = (r: ParentingRecord) => {
     setEditingId(r.id)
     form.setFieldsValue({
-      date: (window as any).dayjs ? (window as any).dayjs(r.date) : r.date,
+      date: dayjs(r.date),
       type: r.type,
       durationMin: r.durationMin,
       childMood: r.childMood,

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, InputNumber, DatePicker, Button, Table, Tag,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select, Statistic, Tooltip
@@ -168,7 +169,7 @@ export default function CInterestManager() {
   const onEdit = (r: InterestRecord) => {
     setEditingId(r.id)
     form.setFieldsValue({
-      date: (window as any).dayjs ? (window as any).dayjs(r.date) : r.date,
+      date: dayjs(r.date),
       category: r.category,
       activity: r.activity,
       durationMin: r.durationMin,

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, DatePicker, Button, Table, Tag,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select
@@ -120,7 +121,7 @@ export default function JCareerManager() {
     setEditingId(r.id)
     // 注意：DatePicker 要 dayjs 对象，不是字符串
     form.setFieldsValue({
-      date: (window as any).dayjs ? (window as any).dayjs(r.date) : r.date,
+      date: dayjs(r.date),
       title: r.title,
       domain: r.domain,
       source: r.source,
