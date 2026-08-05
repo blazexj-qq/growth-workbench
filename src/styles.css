@@ -1,0 +1,37 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* 让滚动条在窄屏不挤占内容 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+
+/* 手机底部 Tab 栏 */
+.wb-tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 56px;
+  display: flex;
+  background: #fff;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.wb-tabbar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  color: #8a8a8a;
+  cursor: pointer;
+  user-select: none;
+}
+.wb-tabbar-item.active { color: #0EA5A4; }
+.wb-tabbar-item .wb-tab-icon { font-size: 20px; line-height: 1; }

@@ -1,0 +1,51 @@
+# ============================================================
+# 成长·升学一体化工作台（growth-workbench）专用 .gitignore
+# 目的：源码与文档入库；构建产物 / 依赖 / 临时 / 隐私不传。
+# 部署：GitHub Pages 由 .github/workflows/deploy.yml 自动 npm run build。
+# ============================================================
+
+# —— 依赖（巨大且可自动重装）——
+node_modules/
+
+# —— 构建产物（GitHub Actions 自动构建，不入库）——
+dist/
+dist-ssr/
+*.local
+
+# —— 旧构建产物备份（每次部署前自动滚动覆盖）——
+dist_old_*/
+
+# —— 临时脚本 / 调试残留 ——
+_tmp/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# —— 本机缓存 / 编辑器 ——
+.vite/
+.cache/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.bak
+
+# —— 环境变量（含阿里云 / 飞书密钥，严禁入库）——
+.env
+.env.local
+.env.*.local
+
+# —— WorkBuddy 记忆（含孩子信息 / 账号） ——
+.workbuddy/
+
+# —— TypeScript / 构建缓存 ——
+*.tsbuildinfo
+
+# —— 其他 ——
+.history/
+coverage/

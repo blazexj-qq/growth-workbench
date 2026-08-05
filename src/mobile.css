@@ -1,0 +1,48 @@
+/* 移动端大厂审美：让手机/平板上的字号、内边距、圆角、列表更易读 */
+@media (max-width: 768px) {
+  /* 全局字号微调 */
+  body { font-size: 14px; }
+
+  /* AntD Card：移动端加内边距 + 更大标题 */
+  .ant-card { border-radius: 10px; }
+  .ant-card-head { padding: 0 12px; min-height: 44px; }
+  .ant-card-head-title { font-size: 15px !important; font-weight: 600 !important; }
+  .ant-card-body { padding: 12px !important; }
+  .ant-card-small > .ant-card-head { min-height: 40px; padding: 0 10px; }
+  .ant-card-small > .ant-card-body { padding: 10px !important; }
+
+  /* Tabs：标签加高 + 字大 */
+  .ant-tabs-tab { padding: 8px 12px !important; font-size: 14px !important; }
+  .ant-tabs-tab-btn { font-size: 14px !important; }
+
+  /* Table：列宽紧凑 */
+  .ant-table-thead > tr > th { padding: 8px 8px !important; font-size: 13px !important; background: #F8FAFC !important; }
+  .ant-table-tbody > tr > td { padding: 10px 8px !important; font-size: 13px !important; }
+  .ant-table { font-size: 13px !important; }
+
+  /* 按钮：移动端最小可点 36px */
+  .ant-btn { font-size: 14px !important; }
+  .ant-btn-sm { height: 30px; padding: 0 10px; }
+
+  /* 表单：标签更紧凑 */
+  .ant-form-item-label > label { font-size: 13px !important; }
+
+  /* Tag：加 padding */
+  .ant-tag { padding: 2px 8px !important; font-size: 12px !important; }
+
+  /* Title */
+  h1.ant-typography, h2.ant-typography { font-size: 18px !important; }
+
+  /* Alert 信息更易读 */
+  .ant-alert { font-size: 13px !important; padding: 8px 12px !important; }
+
+  /* Modal */
+  .ant-modal-body { padding: 16px !important; }
+}
+
+/* 中等屏（iPad 竖屏 768-1024） */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ant-card-head-title { font-size: 15px; }
+  .ant-table-thead > tr > th { font-size: 13px; }
+  .ant-table-tbody > tr > td { font-size: 13px; }
+}
