@@ -35,3 +35,11 @@ body {
 }
 .wb-tabbar-item.active { color: #0EA5A4; }
 .wb-tabbar-item .wb-tab-icon { font-size: 20px; line-height: 1; }
+
+/* 编辑中的表格行高亮（所有模块的「编辑」态共用） */
+.ant-table-tbody > tr.row-editing > td {
+  background: rgba(14, 165, 164, 0.10) !important;
+}
+.ant-table-tbody > tr.row-editing:hover > td {
+  background: rgba(14, 165, 164, 0.16) !important;
+}

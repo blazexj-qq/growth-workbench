@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, DatePicker, Button, Table, Tag,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select
@@ -18,13 +19,16 @@ function newId() {
 }
 
 export default function THomeSchoolManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useHomeSchoolStore()
+  const { records, addRecord, deleteRecord, updateRecord, clearRecords, syncFromCloud } = useHomeSchoolStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = editingId !== null
+  const resetForm = () => { setEditingId(null); form.resetFields() }
 
   // 类型分布
   const typeCounts = useMemo(() => {
@@ -60,6 +64,33 @@ export default function THomeSchoolManager() {
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteHomeSchool([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
   }
+  const onEdit = (r: HomeSchoolRecord) => {
+    form.setFieldsValue({
+      date: dayjs(r.date),
+      channel: r.channel || '班级通知',
+      from: r.from || '',
+      content: r.content || '',
+      type: r.type || '通知',
+      note: r.note || '',
+    })
+    setEditingId(r.id)
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch = {
+      date: values.date.format('YYYY-MM-DD'),
+      channel: values.channel || '班级通知',
+      from: values.from || '',
+      content: values.content || '',
+      type: values.type || '通知',
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    const updated = { id: editingId, ...patch }
+    msg.success('已更新家校记录')
+    if (cloudOn) feishuSync.pushHomeSchool([updated as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    resetForm()
+  }
 
   const columns: ColumnsType<HomeSchoolRecord> = [
     { title: '日期', dataIndex: 'date', width: 100 },
@@ -68,7 +99,12 @@ export default function THomeSchoolManager() {
     { title: '内容摘要', dataIndex: 'content', ellipsis: true, render: (v: string) => v || '-' },
     { title: '类型', dataIndex: 'type', width: 76, render: (v: string) => <Tag color="cyan">{v || '-'}</Tag> },
     { title: '备注', dataIndex: 'note', ellipsis: true, render: (v: string) => v || '-' },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> },
+    { title: '操作', width: 120, render: (_, r) => (
+      <Space size={0}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+      </Space>
+    ) },
   ]
 
   return (
@@ -86,15 +122,15 @@ export default function THomeSchoolManager() {
           children: (
             <Row gutter={16}>
               <Col xs={24} md={8}>
-                <Card size="small" title="录入一条家校信息">
-                  <Form form={form} layout="vertical" onFinish={onAdd}>
+                <Card size="small" title={isEditing ? '编辑该家校信息' : '录入一条家校信息'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                  <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                     <Form.Item name="date" label="日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item>
                     <Form.Item name="channel" label="渠道" initialValue="班级通知"><Select options={HS_CHANNELS.map((c) => ({ label: c, value: c }))} /></Form.Item>
                     <Form.Item name="from" label="来源"><Input placeholder="老师姓名/学科" /></Form.Item>
                     <Form.Item name="content" label="内容摘要"><TextArea rows={2} placeholder="如 下周三春游需签同意书" /></Form.Item>
                     <Form.Item name="type" label="类型" initialValue="通知"><Select options={HS_TYPES.map((t) => ({ label: t, value: t }))} /></Form.Item>
                     <Form.Item name="note" label="备注（可选）"><Input placeholder="如 已回复" /></Form.Item>
-                    <Button type="primary" htmlType="submit" block>保存</Button>
+                    <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                   </Form>
                 </Card>
               </Col>
@@ -102,7 +138,7 @@ export default function THomeSchoolManager() {
                 <Card size="small" title={`已录记录（${records.length} 条）`}
                   extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}>
                   {records.length ? (
-                    <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                    <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                   ) : <Empty description="还没有记录，先在左侧录入" />}
                 </Card>
               </Col>

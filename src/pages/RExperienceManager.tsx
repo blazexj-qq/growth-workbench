@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, DatePicker, Button, Table, Tag,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select, InputNumber
@@ -18,13 +19,16 @@ function newId() {
 }
 
 export default function RExperienceManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useExperienceStore()
+  const { records, addRecord, deleteRecord, updateRecord, clearRecords, syncFromCloud } = useExperienceStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = editingId !== null
+  const resetForm = () => { setEditingId(null); form.resetFields() }
 
   // 形式分布
   const formCounts = useMemo(() => {
@@ -81,6 +85,37 @@ export default function RExperienceManager() {
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteExperience([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
   }
+  const onEdit = (r: ExperienceRecord) => {
+    form.setFieldsValue({
+      date: dayjs(r.date),
+      career: r.career || '',
+      form: r.form || '参观',
+      venue: r.venue || '',
+      durationMin: r.durationMin != null ? r.durationMin : undefined,
+      rating: r.rating != null ? r.rating : undefined,
+      gain: r.gain || '',
+      note: r.note || '',
+    })
+    setEditingId(r.id)
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch = {
+      date: values.date.format('YYYY-MM-DD'),
+      career: values.career || '',
+      form: values.form || '参观',
+      venue: values.venue || '',
+      durationMin: values.durationMin != null && values.durationMin !== '' ? Number(values.durationMin) : undefined,
+      rating: values.rating != null && values.rating !== '' ? Number(values.rating) : undefined,
+      gain: values.gain || '',
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    const updated = { id: editingId, ...patch }
+    msg.success('已更新体验记录')
+    if (cloudOn) feishuSync.pushExperience([updated as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    resetForm()
+  }
 
   const columns: ColumnsType<ExperienceRecord> = [
     { title: '日期', dataIndex: 'date', width: 100 },
@@ -90,7 +125,12 @@ export default function RExperienceManager() {
     { title: '时长(分)', dataIndex: 'durationMin', width: 78, render: (v: number) => v ?? '-' },
     { title: '评分', dataIndex: 'rating', width: 60, render: (v: number) => v ?? '-' },
     { title: '收获', dataIndex: 'gain', ellipsis: true, render: (v: string) => v || '-' },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> },
+    { title: '操作', width: 120, render: (_, r) => (
+      <Space size={0}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+      </Space>
+    ) },
   ]
 
   return (
@@ -111,8 +151,8 @@ export default function RExperienceManager() {
           children: (
             <Row gutter={16}>
               <Col xs={24} md={8}>
-                <Card size="small" title="录入一次体验活动">
-                  <Form form={form} layout="vertical" onFinish={onAdd}>
+                <Card size="small" title={isEditing ? '编辑该体验活动' : '录入一次体验活动'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                  <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                     <Form.Item name="date" label="日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item>
                     <Form.Item name="career" label="体验职业/角色" rules={[{ required: true }]}><Input placeholder="如 消防站开放日" /></Form.Item>
                     <Form.Item name="form" label="形式" initialValue="参观"><Select options={EXP_FORMS.map((f) => ({ label: f, value: f }))} /></Form.Item>
@@ -121,7 +161,7 @@ export default function RExperienceManager() {
                     <Form.Item name="rating" label="兴趣评分（1-5，可选）"><InputNumber min={1} max={5} style={{ width: '100%' }} /></Form.Item>
                     <Form.Item name="gain" label="收获/感想"><TextArea rows={2} placeholder="孩子说了什么、有什么触动" /></Form.Item>
                     <Form.Item name="note" label="备注（可选）"><Input placeholder="如 已拍照片存档" /></Form.Item>
-                    <Button type="primary" htmlType="submit" block>保存</Button>
+                    <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                   </Form>
                 </Card>
               </Col>
@@ -129,7 +169,7 @@ export default function RExperienceManager() {
                 <Card size="small" title={`已录记录（${records.length} 条）`}
                   extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}>
                   {records.length ? (
-                    <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                    <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                   ) : <Empty description="还没有记录，先在左侧录入" />}
                 </Card>
               </Col>
