@@ -3,7 +3,7 @@ import { ArrowRightOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import ModuleCard from '../components/ModuleCard'
 import GrowthMiniChart from '../components/GrowthMiniChart'
-import { modules, groups } from '../data/modules'
+import { modules, groups, groupMeta } from '../data/modules'
 import { timelineEvents, daysLeft } from '../data/sample'
 import { useAppStore } from '../store/useAppStore'
 import { useHealthStore } from '../store/useHealthStore'
@@ -158,34 +158,25 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* 模块快捷入口：分组标题左置，卡片向右平铺，提升右侧空间利用率 */}
+      {/* 模块快捷入口：统一自适应网格铺满整行，卡片带彩色分组标签，不再按分组分行留白 */}
       <Card title="全部模块" style={{ marginTop: 16 }} styles={{ body: { padding: 16 } }}>
-        {groups
-          .filter((g) => g.modules.length > 0)
-          .map((g) => (
-            <div
-              key={g.key}
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '12px 16px',
-                alignItems: 'flex-start',
-                marginBottom: 16,
-              }}
-            >
-              <div style={{ minWidth: 72, paddingTop: 8, flexShrink: 0 }}>
-                <Text strong style={{ opacity: 0.7 }}>{g.label}</Text>
-              </div>
-              <Row gutter={[16, 16]} style={{ flex: 1, minWidth: 260 }}>
-                {g.modules.map((id) => (
-                  <Col xs={12} sm={8} md={6} lg={4} key={id}>
-                    <ModuleCard id={id} />
-                  </Col>
-                ))}
-              </Row>
+        {/* 分组图例 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', marginBottom: 14 }}>
+          {groups.map((g) => (
+            <span key={g.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569' }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: groupMeta[g.key].color }} />
+              {g.label}
+            </span>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+          {modules.map((m) => (
+            <div key={m.id} style={{ flex: '1 1 210px', minWidth: 200, maxWidth: 300 }}>
+              <ModuleCard id={m.id} />
             </div>
           ))}
-        <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
+        </div>
+        <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 14 }}>
           共 {modules.length} 个模块域（A–T）；当前为 M0 基座，各模块详情页为规划占位，功能在 M1–M4 逐步落地。
         </Paragraph>
       </Card>

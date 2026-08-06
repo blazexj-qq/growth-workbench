@@ -1,12 +1,14 @@
 import { Card, Tag } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { getModule } from '../data/modules'
+import { getModule, groupMeta } from '../data/modules'
 
 export default function ModuleCard({ id }: { id: string }) {
   const m = getModule(id)
   const navigate = useNavigate()
   if (!m) return null
   const Icon = m.icon
+  const gm = groupMeta[m.group]
+  const color = gm?.color || '#0EA5A4'
   return (
     <Card
       hoverable
@@ -20,8 +22,8 @@ export default function ModuleCard({ id }: { id: string }) {
             width: 40,
             height: 40,
             borderRadius: 10,
-            background: '#E6F7F6',
-            color: '#0EA5A4',
+            background: `${color}1A`,
+            color,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -33,7 +35,9 @@ export default function ModuleCard({ id }: { id: string }) {
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600 }}>{m.name}</div>
-          <Tag color="cyan" style={{ marginTop: 2 }}>{id}</Tag>
+          <div style={{ marginTop: 4 }}>
+            <Tag color={color} style={{ fontSize: 11, lineHeight: '16px', marginRight: 0 }}>{gm?.label || id}</Tag>
+          </div>
         </div>
       </div>
       <div style={{ fontSize: 12, opacity: 0.65, marginTop: 10, lineHeight: 1.5 }}>{m.desc}</div>

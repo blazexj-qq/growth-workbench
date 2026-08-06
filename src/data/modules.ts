@@ -91,3 +91,14 @@ export const groups = [
 export function getModule(id: string): ModuleDef | undefined {
   return modules.find((m) => m.id === id)
 }
+
+// 分组配色：用于首页「全部模块」卡片上的彩色分组标签与图例
+export const groupMeta: Record<string, { label: string; color: string }> = {
+  overview: { label: '报告', color: '#0EA5A4' },
+  study: { label: '学业', color: '#3B82F6' },
+  health: { label: '身心健康', color: '#10B981' },
+  life: { label: '兴趣与亲子', color: '#F59E0B' },
+  edu: { label: '升学规划', color: '#8B5CF6' },
+  grow: { label: '成长与规划', color: '#EC4899' },
+  archive: { label: '档案与安全', color: '#64748B' },
+}
