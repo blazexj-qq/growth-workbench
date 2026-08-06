@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import {
   Card, Tabs, Input, Button, Switch, Space, App, Alert, Form, DatePicker, Tag, Tooltip,
-  Empty, Row, Col, Statistic, Divider, Modal, message as antdMsg
+  Empty, Row, Col, Statistic, Divider, Modal, Radio, message as antdMsg
 } from 'antd'
 import {
   CloudSyncOutlined, LinkOutlined, ExportOutlined, ImportOutlined,
@@ -14,7 +14,7 @@ import {
   getReadBuddyUrl, setReadBuddyUrl,
   feishuSync, useCloudOn, useSyncHealth
 } from '../store/feishuSync'
-import { useAppStore } from '../store/useAppStore'
+import { useAppStore, calcGradeByBirthday } from '../store/useAppStore'
 
 // 列出所有模块 → 飞书同步路径 → 对应 store 的 syncFromCloud 函数
 // 这里采取"白名单"：每个模块一行 + 一个"立即同步"按钮
@@ -91,6 +91,13 @@ export default function SettingManager() {
       school: child.school, grade: child.grade
     })
   }, [child, childForm])
+
+  // 年级推算提示：实时跟随表单里改动的生日
+  const watchedBirthday = Form.useWatch('birthday', childForm)
+  const gradeHint = useMemo(
+    () => calcGradeByBirthday(watchedBirthday?.format?.('YYYY-MM-DD') || child.birthday),
+    [watchedBirthday, child.birthday]
+  )
 
   // 同步地址保存
   const saveFc = () => {
@@ -399,13 +406,19 @@ export default function SettingManager() {
                   <Form.Item name="name" label="姓名 / 昵称" rules={[{ required: true }]}><Input /></Form.Item>
                   <Form.Item name="birthday" label="生日"><DatePicker style={{ width: '100%' }} /></Form.Item>
                   <Form.Item name="gender" label="性别">
-                    <Input.Group compact>
-                      <Button>女</Button>
-                      <Button>男</Button>
-                    </Input.Group>
+                    <Radio.Group optionType="button" buttonStyle="solid">
+                      <Radio value="女">女</Radio>
+                      <Radio value="男">男</Radio>
+                    </Radio.Group>
                   </Form.Item>
                   <Form.Item name="school" label="学校"><Input /></Form.Item>
                   <Form.Item name="grade" label="年级"><Input placeholder="如 四年级" /></Form.Item>
+                  {gradeHint && (
+                    <div style={{ color: '#64748B', fontSize: 12, marginTop: -12, marginBottom: 16, lineHeight: 1.6 }}>
+                      按生日推算：当前为 <b>{gradeHint.current}</b>（{dayjs().year() + 1} 年 9 月起 {gradeHint.next}）。
+                      如需手写（如「四年级·预习中」）可覆盖上面的框。
+                    </div>
+                  )}
                   <Button type="primary" htmlType="submit">保存档案</Button>
                 </Form>
               </Card>

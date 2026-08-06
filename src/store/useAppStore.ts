@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import dayjs from 'dayjs'
 import { PRIMARY } from '../theme'
 
 export interface ChildProfile {
@@ -21,6 +22,35 @@ export interface AlertItem {
   suggestion?: string
   date: string
   module: string // 对应模块 id，如 'B' 'E'
+}
+
+/**
+ * 按生日推算年级（南京入学规则：8 月 31 日前满 6 周岁入学；学年以 9 月 1 日划分）。
+ * 返回当前所处学年年级 + 下一学年（9 月起）年级，供设置页展示提示用。
+ * 该函数只做推算展示，不强制覆盖用户手动填写的年级。
+ */
+export function calcGradeByBirthday(
+  birthday: string,
+  ref: Date = new Date()
+): { current: string; next: string } | null {
+  if (!birthday) return null
+  const b = dayjs(birthday)
+  if (!b.isValid()) return null
+  // 入学年份：出生年 + 6；若生日在 9 月 1 日及以后（month >= 8），晚一年入学
+  let enrollYear = b.year() + 6
+  if (b.month() >= 8) enrollYear += 1
+  // 当前所处学年的起始年份：ref 在 9 月之前，则学年起始年 = 去年
+  const refD = dayjs(ref)
+  const schoolYearStart = refD.month() >= 8 ? refD.year() : refD.year() - 1
+  const gradeNo = schoolYearStart - enrollYear + 1
+  const cn = (n: number): string => {
+    if (n <= 0) return '学前'
+    if (n <= 6) return ['', '一', '二', '三', '四', '五', '六'][n] + '年级'
+    if (n <= 9) return ['', '初一', '初二', '初三'][n - 6]
+    if (n <= 12) return ['', '高一', '高二', '高三'][n - 9]
+    return '高中以上'
+  }
+  return { current: cn(gradeNo), next: cn(gradeNo + 1) }
 }
 
 interface AppState {
