@@ -1,4 +1,4 @@
-import { Row, Col, Card, Statistic, Tag, List, Typography, Progress, Button, Space } from 'antd'
+import { Row, Col, Card, Statistic, Tag, List, Typography, Progress, Button, Space, Alert } from 'antd'
 import { ArrowRightOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import ModuleCard from '../components/ModuleCard'
@@ -25,31 +25,30 @@ export default function Dashboard() {
     ? Math.floor((Date.now() - new Date(latestHealth.date).getTime()) / 86400000)
     : null
   const recent = daysSince != null && daysSince <= 7
-  const freshnessTip = recent ? '最近一次记录' : latestHealth ? `近 ${daysSince} 天无记录` : '尚未记录'
   const todayStats = [
     {
       key: 'sleep', label: '睡眠(最近)',
       value: latestHealth?.sleepHours != null ? `${latestHealth.sleepHours} h` : '未记录',
       good: latestHealth?.sleepHours != null && latestHealth.sleepHours >= 8,
-      tip: freshnessTip,
+      tip: '建议 ≥ 8h',
     },
     {
       key: 'exercise', label: '运动(最近)',
       value: latestHealth?.exerciseMin != null ? `${latestHealth.exerciseMin} min` : '未记录',
       good: latestHealth?.exerciseMin != null && latestHealth.exerciseMin >= 60,
-      tip: freshnessTip,
+      tip: '建议 ≥ 60min',
     },
     {
       key: 'mood', label: '心情(最近)',
       value: latestHealth?.mood || '未记录',
       good: latestHealth?.mood === '好',
-      tip: freshnessTip,
+      tip: '好 / 中 / 差',
     },
     {
       key: 'lastdate', label: '最近记录日期',
       value: latestHealth?.date || '无',
       good: recent,
-      tip: recent ? '数据较新' : '建议尽快补录身心数据',
+      tip: recent ? '数据较新' : latestHealth ? `已 ${daysSince} 天未更新` : '尚未记录，建议补录',
     },
   ]
 
@@ -71,7 +70,29 @@ export default function Dashboard() {
         </Space>
       </Card>
 
-      {/* 今日状态 */}
+      {/* 最近一次身心状态（读真实记录，非实时监测） */}
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+        <Text strong style={{ fontSize: 15 }}>最近一次身心状态</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>展示最新一条身心记录，非实时监测</Text>
+      </div>
+      {latestHealth && !recent && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={`最近一次身心记录是 ${latestHealth.date}，已 ${daysSince} 天未更新`}
+          action={<Button size="small" type="primary" onClick={() => navigate('/m/B')}>去补录</Button>}
+        />
+      )}
+      {!latestHealth && (
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message="尚未记录任何身心数据"
+          action={<Button size="small" type="primary" onClick={() => navigate('/m/B')}>去补录</Button>}
+        />
+      )}
       <Row gutter={[16, 16]}>
         {todayStats.map((s) => (
           <Col xs={12} sm={6} key={s.key}>
