@@ -26,9 +26,10 @@ export default function GrowthMiniChart() {
   }
 
   const option = {
-    grid: { left: 40, right: 44, top: 28, bottom: 28, containLabel: true },
+    grid: { left: 40, right: 44, top: 24, bottom: 40, containLabel: true },
     tooltip: { trigger: 'axis' },
-    legend: { data: ['身高(cm)', '体重(kg)'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    // 图例放底部，避免窄卡片右上角横向拥挤导致文字重叠
+    legend: { data: ['身高(cm)', '体重(kg)'], bottom: 0, left: 'center', itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 11 } },
     // 双 Y 轴：身高(cm) 用左轴、体重(kg) 用右轴，各自刻度，避免体重线被压在底部失真
     xAxis: {
       type: 'category',
