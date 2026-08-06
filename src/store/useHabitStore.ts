@@ -23,6 +23,7 @@ interface HabitState {
   records: HabitRecord[]
   addRecord: (r: Omit<HabitRecord, 'id'> & { id?: string }) => void
   deleteRecord: (id: string) => void
+  updateRecord: (id: string, patch: Partial<HabitRecord>) => void
   clearRecords: () => void
   syncFromCloud: () => Promise<{ ok: boolean; count?: number; error?: string }>
 }
@@ -41,6 +42,7 @@ export const useHabitStore = create<HabitState>()(
       ],
       addRecord: (r) => set((s) => ({ records: [...s.records, { ...r, id: (r as any).id || uid() }] })),
       deleteRecord: (id) => set((s) => ({ records: s.records.filter((x) => x.id !== id) })),
+      updateRecord: (id, patch) => set((s) => ({ records: s.records.map((x) => x.id === id ? { ...x, ...patch } : x) })),
       clearRecords: () => set({ records: [] }),
       syncFromCloud: async () => {
         if (!getCloudSync() || !getFcUrl()) return { ok: false, error: '未开启云同步或未配置地址' }

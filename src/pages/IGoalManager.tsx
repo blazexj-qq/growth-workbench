@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, InputNumber, DatePicker, Button, Table, Tag,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Progress, Select,
@@ -62,13 +63,16 @@ function makeProgressColor(th: Thresholds) {
 }
 
 export default function IGoalManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useGoalStore()
+  const { records, addRecord, deleteRecord, updateRecord, clearRecords, syncFromCloud } = useGoalStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = editingId !== null
+  const resetForm = () => { setEditingId(null); form.resetFields() }
 
   // 颜色分档阈值（仅经验参考，可在「进度看板」右上 ⚙ 调整）
   const [th, setTh] = useState<Thresholds>(loadTh)
@@ -166,6 +170,37 @@ export default function IGoalManager() {
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteGoal([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
   }
+  const onEdit = (r: GoalRecord) => {
+    form.setFieldsValue({
+      createdAt: r.createdAt ? dayjs(r.createdAt) : undefined,
+      category: r.category || '学业',
+      content: r.content || '',
+      dueDate: r.dueDate ? dayjs(r.dueDate) : undefined,
+      status: r.status || '进行中',
+      progress: r.progress ?? 0,
+      review: r.review || '',
+      note: r.note || '',
+    })
+    setEditingId(r.id)
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch = {
+      createdAt: values.createdAt ? values.createdAt.format('YYYY-MM-DD') : todayStr(),
+      category: values.category || '学业',
+      content: values.content || '',
+      dueDate: values.dueDate ? values.dueDate.format('YYYY-MM-DD') : undefined,
+      status: values.status || '进行中',
+      progress: values.progress != null && values.progress !== '' ? Number(values.progress) : 0,
+      review: values.review || '',
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    const updated = { id: editingId, ...patch }
+    msg.success('已更新目标')
+    if (cloudOn) feishuSync.pushGoal([updated as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    resetForm()
+  }
 
   const columns: ColumnsType<GoalRecord> = [
     { title: '创建日期', dataIndex: 'createdAt', width: 100 },
@@ -182,7 +217,12 @@ export default function IGoalManager() {
         </div>
       ),
     },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> },
+    { title: '操作', width: 120, render: (_, r) => (
+      <Space size={0}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+      </Space>
+    ) },
   ]
 
   return (
@@ -202,8 +242,8 @@ export default function IGoalManager() {
             children: (
               <Row gutter={16}>
                 <Col xs={24} md={8}>
-                  <Card size="small" title="录入一个目标">
-                    <Form form={form} layout="vertical" onFinish={onAdd} initialValues={{ createdAt: undefined, category: '学业', status: '进行中', progress: 0 }}>
+                  <Card size="small" title={isEditing ? '编辑该目标' : '录入一个目标'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                    <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd} initialValues={{ createdAt: undefined, category: '学业', status: '进行中', progress: 0 }}>
                       <Form.Item name="createdAt" label="创建日期"><DatePicker style={{ width: '100%' }} placeholder="默认今天" /></Form.Item>
                       <Form.Item name="category" label="目标类别"><Select options={GOAL_CATS.map((c) => ({ label: c, value: c }))} /></Form.Item>
                       <Form.Item name="content" label="目标内容" rules={[{ required: true }]}><TextArea rows={2} placeholder="如 本学期数学建模题不丢分" /></Form.Item>
@@ -212,7 +252,7 @@ export default function IGoalManager() {
                       <Form.Item name="progress" label="进度（0-100）"><InputNumber min={0} max={100} style={{ width: '100%' }} placeholder="0" /></Form.Item>
                       <Form.Item name="review" label="复盘（可选）"><TextArea rows={2} placeholder="已完成部分/卡点/下一步" /></Form.Item>
                       <Form.Item name="note" label="备注（可选）"><Input placeholder="其他说明" /></Form.Item>
-                      <Button type="primary" htmlType="submit" block>保存</Button>
+                      <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                     </Form>
                   </Card>
                 </Col>
@@ -221,7 +261,7 @@ export default function IGoalManager() {
                     extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}
                   >
                     {records.length ? (
-                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                     ) : <Empty description="还没有目标，先在左侧录入" />}
                   </Card>
                 </Col>
