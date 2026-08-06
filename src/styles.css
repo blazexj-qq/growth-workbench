@@ -44,6 +44,11 @@ body {
   background: rgba(14, 165, 164, 0.16) !important;
 }
 
+/* P5 主题柔和化补充：表头字重放缓、Tag 去硬边框、卡片加极淡阴影（不覆盖边框色，保深色模式） */
+.ant-table-thead > tr > th { font-weight: 500 !important; }
+.ant-tag { border-color: transparent !important; }
+.ant-card { box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05); }
+
 /* 打印周报/月报时隐藏导航与手机 Tab，只留报告内容 */
 @media print {
   .ant-layout-sider,

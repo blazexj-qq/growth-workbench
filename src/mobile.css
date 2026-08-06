@@ -4,7 +4,7 @@
   body { font-size: 14px; }
 
   /* AntD Card：移动端加内边距 + 更大标题 */
-  .ant-card { border-radius: 10px; }
+  .ant-card { border-radius: 14px; }
   .ant-card-head { padding: 0 12px; min-height: 44px; }
   .ant-card-head-title { font-size: 15px !important; font-weight: 600 !important; }
   .ant-card-body { padding: 12px !important; }
@@ -16,7 +16,7 @@
   .ant-tabs-tab-btn { font-size: 14px !important; }
 
   /* Table：列宽紧凑 */
-  .ant-table-thead > tr > th { padding: 8px 8px !important; font-size: 13px !important; background: #F8FAFC !important; }
+  .ant-table-thead > tr > th { padding: 8px 8px !important; font-size: 13px !important; background: #F1F5F9 !important; }
   .ant-table-tbody > tr > td { padding: 10px 8px !important; font-size: 13px !important; }
   .ant-table { font-size: 13px !important; }
 
