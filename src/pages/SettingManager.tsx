@@ -87,8 +87,11 @@ export default function SettingManager() {
   const [childForm] = Form.useForm()
   useEffect(() => {
     childForm.setFieldsValue({
-      name: child.name, birthday: child.birthday, gender: child.gender,
-      school: child.school, grade: child.grade
+      name: child.name,
+      birthday: child.birthday && dayjs(child.birthday).isValid() ? dayjs(child.birthday) : undefined,
+      gender: child.gender,
+      school: child.school,
+      grade: child.grade,
     })
   }, [child, childForm])
 
