@@ -25,6 +25,7 @@ import GArchiveManager from '../pages/GArchiveManager'
 import LAlertManager from '../pages/LAlertManager'
 import NPrivacyManager from '../pages/NPrivacyManager'
 import SettingManager from '../pages/SettingManager'
+import ReportManager from '../pages/ReportManager'
 import { usePrivacyStore } from '../store/usePrivacyStore'
 import { Alert } from 'antd'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -58,6 +59,7 @@ export default function AppLayout() {
     G: GArchiveManager,
     L: LAlertManager,
     N: NPrivacyManager,
+    W: ReportManager,
   }
 
   return (

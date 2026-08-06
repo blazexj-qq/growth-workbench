@@ -3,7 +3,7 @@ import {
   RocketOutlined, IdcardOutlined, CalendarOutlined, AimOutlined, BulbOutlined,
   TrophyOutlined, AlertOutlined, ShareAltOutlined, SafetyCertificateOutlined,
   MedicineBoxOutlined, FundOutlined, NodeIndexOutlined, SolutionOutlined,
-  SmileOutlined, BookOutlined
+  SmileOutlined, BookOutlined, FileTextOutlined
 } from '@ant-design/icons'
 import type { ComponentType } from 'react'
 
@@ -17,6 +17,7 @@ export interface ModuleDef {
 }
 
 // 模块地图（对应集成优化 V2 方案，共 18 个域：Q 已并入 E 作择校卡子功能，S 已并入 N 作孩子端可见性规则）
+// 2026-08-06 新增 W「成长周报·月报」汇总域（本地规则自动聚合，非独立数据采集模块）
 export const modules: ModuleDef[] = [
   { id: 'A', name: '成绩管理', icon: LineChartOutlined, group: 'study',
     desc: '校内考试成绩、班级/年级排名趋势，错题管家数据自动归集。',
@@ -71,11 +72,14 @@ export const modules: ModuleDef[] = [
     planned: ['分级预警（紧急/重点/一般）', '跨维度关联研判', '推送设置', '处理闭环'] },
   { id: 'N', name: '隐私与合规', icon: SafetyCertificateOutlined, group: 'archive',
     desc: '字段加密、角色权限、授权审计、被遗忘权（未成年人底线）；含孩子端可见性规则（原 S）。',
-    planned: ['角色权限（孩子/家长/规划师）', '字段级加密', '访问审计', '一键导出/删除', '孩子端可见性与暂停记录（原 S）'] }
+    planned: ['角色权限（孩子/家长/规划师）', '字段级加密', '访问审计', '一键导出/删除', '孩子端可见性与暂停记录（原 S）'] },
+  { id: 'W', name: '成长周报·月报', icon: FileTextOutlined, group: 'overview',
+    desc: '本地规则自动汇总本周/本月/全部周期的记录，生成可读成长小结（观察、非诊断、防焦虑），一键打印或复制分享。',
+    planned: ['本周/本月/全部周期切换', '各模块本期记录概览', '成长里程碑聚焦', '待处理预警提醒', '本地模板文字小结', '打印 / 复制分享'] }
 ]
 
 export const groups = [
-  { key: 'overview', label: '成长总览', modules: [] as string[] },
+  { key: 'overview', label: '成长总览', modules: ['W'] },
   { key: 'study', label: '学业', modules: ['A', 'P'] },
   { key: 'health', label: '身心健康', modules: ['B', 'O'] },
   { key: 'life', label: '兴趣与亲子', modules: ['C', 'D'] },

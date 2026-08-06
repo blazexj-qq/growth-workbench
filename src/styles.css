@@ -43,3 +43,13 @@ body {
 .ant-table-tbody > tr.row-editing:hover > td {
   background: rgba(14, 165, 164, 0.16) !important;
 }
+
+/* 打印周报/月报时隐藏导航与手机 Tab，只留报告内容 */
+@media print {
+  .ant-layout-sider,
+  .ant-layout-header,
+  .wb-tabbar {
+    display: none !important;
+  }
+  .ant-layout-content { padding: 0 !important; max-width: 100% !important; }
+}
