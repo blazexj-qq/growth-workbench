@@ -1,6 +1,7 @@
 import { Layout, Menu } from 'antd'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { modules, groups, getModule } from '../data/modules'
+import { DashboardOutlined } from '@ant-design/icons'
+import { groups, getModule } from '../data/modules'
 import { useAppStore } from '../store/useAppStore'
 
 const { Sider } = Layout
@@ -12,20 +13,28 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const items = groups
-    .filter((g) => g.modules.length > 0)
-    .map((g) => ({
-      key: g.key,
-      label: g.label,
-      type: 'group' as const,
-      children: g.modules.map((id) => {
-        const m = getModule(id)!
-        const Icon = m.icon
-        return { key: `/m/${id}`, icon: <Icon />, label: m.name }
-      })
-    }))
+  // 首页入口（成长驾驶舱），独立于分组，始终可点击回到首页
+  const homeItem = { key: '/', icon: <DashboardOutlined />, label: '成长驾驶舱' }
 
-  const activeKey = location.pathname.startsWith('/m/') ? [location.pathname] : []
+  const items = [
+    homeItem,
+    ...groups
+      .filter((g) => g.modules.length > 0)
+      .map((g) => ({
+        key: g.key,
+        label: g.label,
+        type: 'group' as const,
+        children: g.modules.map((id) => {
+          const m = getModule(id)!
+          const Icon = m.icon
+          return { key: `/m/${id}`, icon: <Icon />, label: m.name }
+        })
+      }))
+  ]
+
+  const activeKey = location.pathname === '/'
+    ? ['/']
+    : (location.pathname.startsWith('/m/') ? [location.pathname] : [])
   const openKey = groups.find((g) => g.modules.some((id) => location.pathname === `/m/${id}`))?.key
 
   return (

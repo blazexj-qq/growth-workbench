@@ -79,7 +79,7 @@ export const modules: ModuleDef[] = [
 ]
 
 export const groups = [
-  { key: 'overview', label: '成长总览', modules: ['W'] },
+  { key: 'overview', label: '报告', modules: ['W'] },
   { key: 'study', label: '学业', modules: ['A', 'P'] },
   { key: 'health', label: '身心健康', modules: ['B', 'O'] },
   { key: 'life', label: '兴趣与亲子', modules: ['C', 'D'] },
