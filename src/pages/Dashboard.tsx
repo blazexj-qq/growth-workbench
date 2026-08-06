@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import ModuleCard from '../components/ModuleCard'
 import GrowthMiniChart from '../components/GrowthMiniChart'
 import { modules, groups } from '../data/modules'
-import { todayStats, timelineEvents, daysLeft } from '../data/sample'
+import { timelineEvents, daysLeft } from '../data/sample'
 import { useAppStore } from '../store/useAppStore'
+import { useHealthStore } from '../store/useHealthStore'
 
 const { Title, Paragraph, Text } = Typography
 
@@ -13,6 +14,44 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const child = useAppStore((s) => s.child)
   const alerts = useAppStore((s) => s.alerts)
+
+  // 首页"今日状态"改为读真实最新身心记录（不再用 sample.ts 写死演示数据）
+  // 避免与预警中心"X天未记录"矛盾，欺骗家长以为系统在正常记录
+  const healthRecords = useHealthStore((s) => s.records)
+  const latestHealth = healthRecords.length
+    ? healthRecords.slice().sort((a, b) => b.date.localeCompare(a.date))[0]
+    : null
+  const daysSince = latestHealth
+    ? Math.floor((Date.now() - new Date(latestHealth.date).getTime()) / 86400000)
+    : null
+  const recent = daysSince != null && daysSince <= 7
+  const freshnessTip = recent ? '最近一次记录' : latestHealth ? `近 ${daysSince} 天无记录` : '尚未记录'
+  const todayStats = [
+    {
+      key: 'sleep', label: '睡眠(最近)',
+      value: latestHealth?.sleepHours != null ? `${latestHealth.sleepHours} h` : '未记录',
+      good: latestHealth?.sleepHours != null && latestHealth.sleepHours >= 8,
+      tip: freshnessTip,
+    },
+    {
+      key: 'exercise', label: '运动(最近)',
+      value: latestHealth?.exerciseMin != null ? `${latestHealth.exerciseMin} min` : '未记录',
+      good: latestHealth?.exerciseMin != null && latestHealth.exerciseMin >= 60,
+      tip: freshnessTip,
+    },
+    {
+      key: 'mood', label: '心情(最近)',
+      value: latestHealth?.mood || '未记录',
+      good: latestHealth?.mood === '好',
+      tip: freshnessTip,
+    },
+    {
+      key: 'lastdate', label: '最近记录日期',
+      value: latestHealth?.date || '无',
+      good: recent,
+      tip: recent ? '数据较新' : '建议尽快补录身心数据',
+    },
+  ]
 
   return (
     <div>

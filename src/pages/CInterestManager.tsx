@@ -247,7 +247,7 @@ export default function CInterestManager() {
                 ${d.signal ? `<div>信号均分：<b>${d.signal}/5</b></div>` : ''}`
       },
     }),
-    xAxis: Object.assign({}, baseAxis, { type: 'value' }),
+    xAxis: Object.assign({}, baseAxis, { type: 'value', minInterval: 1 }),
     yAxis: Object.assign({}, baseAxis, {
       type: 'category',
       data: byCat.map((d) => `${categoryEmoji(d.cat)} ${d.cat}`),
@@ -511,10 +511,28 @@ export default function CInterestManager() {
                 {records.length ? (
                   <>
                     <Card size="small" title="各兴趣大类活动次数">
-                      {byCat.length ? <ReactECharts option={catBarOption} style={{ height: 260 + byCat.length * 4 }} notMerge lazyUpdate /> : <Empty description="暂无可分类的活动" />}
+                      {byCat.length >= 3 ? (
+                        <ReactECharts option={catBarOption} style={{ height: 260 + byCat.length * 4 }} notMerge lazyUpdate />
+                      ) : byCat.length ? (
+                        <Row gutter={12}>
+                          {byCat.map((d) => (
+                            <Col xs={12} sm={8} key={d.cat}>
+                              <Card size="small">
+                                <div style={{ fontSize: 12, color: '#64748B' }}>{categoryEmoji(d.cat)} {d.cat}</div>
+                                <div style={{ fontSize: 22, fontWeight: 600, color: categoryColor(d.cat) }}>{d.count}<span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 4 }}>次</span></div>
+                                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>总时长 {d.totalMin} 分钟</div>
+                              </Card>
+                            </Col>
+                          ))}
+                        </Row>
+                      ) : <Empty description="暂无可分类的活动" />}
                     </Card>
                     <Card size="small" title="4 大信号趋势（1-5，越高越强）">
-                      <ReactECharts option={sigLineOption} style={{ height: 280 }} notMerge lazyUpdate />
+                      {dates.length >= 5 ? (
+                        <ReactECharts option={sigLineOption} style={{ height: 280 }} notMerge lazyUpdate />
+                      ) : (
+                        <Alert type="info" showIcon message={`数据积累中：已记录 ${dates.length} 个不同日期，满 5 次后自动显示趋势线（还差 ${Math.max(0, 5 - dates.length)} 次记录）。这样避免仅凭 2-3 个点就误读成"下滑趋势"。`} />
+                      )}
                     </Card>
                   </>
                 ) : <Empty description="暂无数据" />}

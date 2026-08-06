@@ -299,8 +299,8 @@ export default function DParentingManager() {
                   </Col>
                   <Col xs={12} sm={12} md={12} lg={6}>
                     <Card size="small">
-                      <div style={{ color: '#64748B', fontSize: 12 }}>累计互动次数</div>
-                      <div style={{ fontSize: 22, fontWeight: 600, color: '#0F766E' }}>{records.length}<span style={{ fontSize: 13, color: '#94A3B8', marginLeft: 4 }}>次</span></div>
+                      <div style={{ color: '#64748B', fontSize: 12 }}>近 7 天互动次数</div>
+                      <div style={{ fontSize: 22, fontWeight: 600, color: '#0F766E' }}>{recent7.length}<span style={{ fontSize: 13, color: '#94A3B8', marginLeft: 4 }}>次</span></div>
                       <div style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>每周 3–5 次即不错</div>
                     </Card>
                   </Col>

@@ -6,5 +6,5 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   server: { port: 5173, host: true },
-  build: { outDir: 'dist', chunkSizeWarningLimit: 1500 }
+  build: { outDir: 'dist', chunkSizeWarningLimit: 1500, emptyOutDir: false }
 })
