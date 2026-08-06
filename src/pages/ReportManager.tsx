@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card, Segmented, Row, Col, Statistic, List, Tag, Typography, Space, Button, Empty,
   message, Alert, App
@@ -66,7 +67,15 @@ const statModules = modules.filter((m) => !SKIP_IDS.has(m.id))
 
 export default function ReportManager() {
   const { message: msg } = App.useApp()
+  const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('week')
+
+  // 统计卡片点击后滚动到对应内容区
+  const groupsRef = useRef<HTMLDivElement>(null)
+  const alertsRef = useRef<HTMLDivElement>(null)
+  const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   // ---- 全部数据源（响应式订阅） ----
   const exams = useScoreStore((s) => s.exams)
@@ -277,17 +286,35 @@ export default function ReportManager() {
 
       <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
         <Col xs={8}>
-          <Card size="small">
+          <Card
+            size="small"
+            hoverable
+            onClick={() => scrollTo(groupsRef)}
+            style={{ cursor: 'pointer' }}
+            styles={{ body: { padding: 12 } }}
+          >
             <Statistic title="本期记录" value={report.total} suffix="条" />
           </Card>
         </Col>
         <Col xs={8}>
-          <Card size="small">
+          <Card
+            size="small"
+            hoverable
+            onClick={() => scrollTo(groupsRef)}
+            style={{ cursor: 'pointer' }}
+            styles={{ body: { padding: 12 } }}
+          >
             <Statistic title="覆盖维度" value={report.covered} suffix="个" />
           </Card>
         </Col>
         <Col xs={8}>
-          <Card size="small">
+          <Card
+            size="small"
+            hoverable
+            onClick={() => report.periodAlerts.length ? scrollTo(alertsRef) : navigate('/m/L')}
+            style={{ cursor: 'pointer' }}
+            styles={{ body: { padding: 12 } }}
+          >
             <Statistic
               title="待处理提醒"
               value={report.periodAlerts.length}
@@ -312,6 +339,7 @@ export default function ReportManager() {
       ) : (
         <>
           {/* 按分组展示各模块本期记录 */}
+          <div ref={groupsRef} />
           {groups
             .filter((g) => g.key !== 'overview')
             .map((g) => {
@@ -388,6 +416,7 @@ export default function ReportManager() {
           )}
 
           {/* 待处理预警 */}
+          <div ref={alertsRef} />
           {report.periodAlerts.length > 0 && (
             <Card
               size="small"

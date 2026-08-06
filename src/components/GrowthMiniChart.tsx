@@ -26,11 +26,18 @@ export default function GrowthMiniChart() {
   }
 
   const option = {
-    grid: { left: 40, right: 44, top: 24, bottom: 40, containLabel: true },
+    grid: { left: 40, right: 44, top: 24, bottom: 48, containLabel: true },
     tooltip: { trigger: 'axis' },
-    // 图例放底部，避免窄卡片右上角横向拥挤导致文字重叠
-    legend: { data: ['身高(cm)', '体重(kg)'], bottom: 0, left: 'center', itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 11 } },
-    // 双 Y 轴：身高(cm) 用左轴、体重(kg) 用右轴，各自刻度，避免体重线被压在底部失真
+    // 图例放底部；标签简化为'身高/体重'(Y轴已带单位cm/kg)，避免窄卡片内文字被截断
+    legend: {
+      data: ['身高', '体重'],
+      bottom: 4,
+      left: 'center',
+      itemWidth: 14,
+      itemHeight: 8,
+      itemGap: 24,
+      textStyle: { fontSize: 11 },
+    },
     xAxis: {
       type: 'category',
       data: dates,
@@ -44,7 +51,7 @@ export default function GrowthMiniChart() {
     ],
     series: [
       {
-        name: '身高(cm)',
+        name: '身高',
         type: 'line',
         smooth: true,
         yAxisIndex: 0,
@@ -54,7 +61,7 @@ export default function GrowthMiniChart() {
         areaStyle: { opacity: 0.08 },
       },
       {
-        name: '体重(kg)',
+        name: '体重',
         type: 'line',
         smooth: true,
         yAxisIndex: 1,

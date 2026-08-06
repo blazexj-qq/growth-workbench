@@ -96,7 +96,12 @@ export default function Dashboard() {
       <Row gutter={[16, 16]}>
         {todayStats.map((s) => (
           <Col xs={12} sm={6} key={s.key}>
-            <Card styles={{ body: { padding: 16 } }}>
+            <Card
+              hoverable
+              styles={{ body: { padding: 16 } }}
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate('/m/B')}
+            >
               <Statistic title={s.label} value={s.value} valueStyle={{ fontSize: 22 }} />
               <Tag color={s.good ? 'green' : 'orange'} style={{ marginTop: 8 }}>
                 {s.good ? '达标' : '待改善'}
