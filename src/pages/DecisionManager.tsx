@@ -8,6 +8,7 @@ import {
   useDecisionStore, type DecisionCard, type DecisionOption, type DecisionStatus
 } from '../store/useDecisionStore'
 import { feishuSync, useCloudOn } from '../store/feishuSync'
+import dayjs from 'dayjs'
 
 const { TextArea } = Input
 const STATUSES: DecisionStatus[] = ['进行中', '已决', '搁置']
@@ -28,6 +29,10 @@ export default function DecisionManager() {
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  // 编辑状态
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = !!editingId
+  const resetForm = () => { form.resetFields(); setEditingId(null) }
 
   const onAdd = (values: any) => {
     const options: DecisionOption[] = (values.options || [])
@@ -60,6 +65,42 @@ export default function DecisionManager() {
     }
     msg.success('已记录结论：' + name)
   }
+  const onEdit = (c: DecisionCard) => {
+    setEditingId(c.id)
+    form.setFieldsValue({
+      title: c.title,
+      context: c.context,
+      options: (c.options || []).map((o) => ({ name: o.name, pros: o.pros, cons: o.cons, weight: o.weight })),
+      decidedOption: c.decidedOption,
+      status: c.status,
+      dateDecided: c.dateDecided ? dayjs(c.dateDecided) : undefined,
+      note: c.note,
+    })
+    msg.info('已载入该决策卡，修改后点「更新」即可')
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const options: DecisionOption[] = (values.options || [])
+      .map((o: any) => ({ name: o.name, pros: o.pros || '', cons: o.cons || '', weight: o.weight ? Number(o.weight) : undefined }))
+      .filter((o: DecisionOption) => o.name)
+    const patch = {
+      title: values.title,
+      context: values.context || '',
+      options,
+      decidedOption: values.decidedOption || undefined,
+      status: values.status || '进行中',
+      dateDecided: values.dateDecided ? values.dateDecided.format('YYYY-MM-DD') : undefined,
+      note: values.note || '',
+    }
+    updateCard(editingId, patch)
+    msg.success('已更新决策卡')
+    setEditingId(null)
+    form.resetFields()
+    if (cloudOn) {
+      const updated = useDecisionStore.getState().cards.find((c) => c.id === editingId)
+      if (updated) feishuSync.pushDecision([updated as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    }
+  }
 
   const columns: ColumnsType<DecisionCard> = [
     {
@@ -78,9 +119,10 @@ export default function DecisionManager() {
     },
     { title: '选项数', dataIndex: 'options', width: 70, render: (v: DecisionOption[]) => v.length },
     {
-      title: '操作', width: 150,
+      title: '操作', width: 200,
       render: (_, r) => (
         <Space size={4}>
+          <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
           <Select
             size="small" placeholder="设为结论" style={{ width: 96 }}
             options={r.options.map((o) => ({ value: o.name, label: o.name }))}
@@ -119,8 +161,8 @@ export default function DecisionManager() {
             children: (
               <Row gutter={16}>
                 <Col xs={24} md={9}>
-                  <Card size="small" title="新建决策卡">
-                    <Form form={form} layout="vertical" onFinish={onAdd}>
+                  <Card size="small" title={isEditing ? '编辑决策卡' : '新建决策卡'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                    <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                       <Form.Item name="title" label="决策主题" rules={[{ required: true }]}>
                         <Input placeholder="如 小升初：一中思益 vs 冲民办" />
                       </Form.Item>
@@ -167,7 +209,7 @@ export default function DecisionManager() {
                       <Form.Item name="note" label="备注（可选）">
                         <Input placeholder="如 依据/后续动作" />
                       </Form.Item>
-                      <Button type="primary" htmlType="submit" block>保存决策卡</Button>
+                      <Button type="primary" htmlType="submit" block>{isEditing ? '更新决策卡' : '保存决策卡'}</Button>
                     </Form>
                   </Card>
                 </Col>
@@ -177,7 +219,7 @@ export default function DecisionManager() {
                     extra={cards.length ? <Button size="small" danger onClick={() => { clearCards(); msg.success('已清空') }}>清空</Button> : null}
                   >
                     {cards.length ? (
-                      <Table rowKey="id" size="small" columns={columns} dataSource={cards.slice().reverse()} pagination={false} scroll={{ x: 'max-content', y: 360 }} />
+                      <Table rowKey="id" size="small" columns={columns} dataSource={cards.slice().reverse()} pagination={false} scroll={{ x: 'max-content', y: 360 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                     ) : <Empty description="还没有决策，先在左侧新建" />}
                   </Card>
                 </Col>
