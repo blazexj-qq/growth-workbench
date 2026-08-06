@@ -181,7 +181,7 @@ export default function DParentingManager() {
         </Tooltip>
       ) : '-',
     },
-    { title: '操作', width: 120, fixed: 'right' as const, render: (_, r) => (
+    { title: '操作', width: 120, render: (_, r) => (
       <Space size={4}>
         <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
         <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>

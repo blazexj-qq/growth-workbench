@@ -27,6 +27,7 @@ import NPrivacyManager from '../pages/NPrivacyManager'
 import SettingManager from '../pages/SettingManager'
 import { usePrivacyStore } from '../store/usePrivacyStore'
 import { Alert } from 'antd'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
 export default function AppLayout() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -73,12 +74,14 @@ export default function AppLayout() {
           />
         )}
         <Layout.Content style={{ padding: isMobile ? 12 : 24, maxWidth: 1400, margin: '0 auto', width: '100%' }}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/m/:id" element={<ModuleStub realModules={realModules} />} />
-            <Route path="/settings" element={<SettingManager />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+          <ErrorBoundary module="当前页面">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/m/:id" element={<ModuleStub realModules={realModules} />} />
+              <Route path="/settings" element={<SettingManager />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </ErrorBoundary>
         </Layout.Content>
         {isMobile && <MobileTabBar />}
       </Layout>

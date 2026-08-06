@@ -220,7 +220,7 @@ export default function CInterestManager() {
     { title: '沉浸', width: 60, render: (_, r) => (r.immersion != null ? <Tag color="#8B5CF6">{r.immersion}</Tag> : '-') },
     { title: '表现', width: 60, render: (_, r) => (r.performance != null ? <Tag color="#F59E0B">{r.performance}</Tag> : '-') },
     { title: '家长观察', dataIndex: 'parentObs', ellipsis: true },
-    { title: '操作', width: 120, fixed: 'right' as const,
+    { title: '操作', width: 120,
       render: (_, r) => (
         <Space size={4}>
           <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>

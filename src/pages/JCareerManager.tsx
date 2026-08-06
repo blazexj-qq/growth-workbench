@@ -140,7 +140,7 @@ export default function JCareerManager() {
     { title: '想法', dataIndex: 'thought', ellipsis: true, render: (v: string) => v || '-' },
     { title: '状态', dataIndex: 'status', width: 80, render: (v: string) => <Tag color="gold">{v || '-'}</Tag> },
     {
-      title: '操作', width: 120, fixed: 'right' as const,
+      title: '操作', width: 120,
       render: (_, r) => (
         <Space size={4}>
           <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
