@@ -77,13 +77,17 @@ function newId() {
 }
 
 export default function ScoreManager() {
-  const { exams, weakPoints, addExam, deleteExam, importWeakPoints, updateWeakStatus, clearWeakPoints, pushWeakAll, pushExamAll, syncFromCloud } = useScoreStore()
+  const { exams, weakPoints, addExam, deleteExam, updateExam, importWeakPoints, updateWeakStatus, clearWeakPoints, pushWeakAll, pushExamAll, syncFromCloud } = useScoreStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  // 编辑状态
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = !!editingId
+  const resetForm = () => { form.resetFields(); setEditingId(null) }
   const [csv, setCsv] = useState('')
   // 一键导入：GitHub URL / 本地文件
   const [ghUrl, setGhUrl] = useState('')
@@ -167,6 +171,40 @@ export default function ScoreManager() {
     if (cloudOn) feishuSync.deleteExam([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
   }
 
+  const onEdit = (r: ExamRecord) => {
+    setEditingId(r.id)
+    form.setFieldsValue({
+      subject: r.subject,
+      examName: r.examName,
+      date: dayjs(r.date),
+      score: r.score,
+      fullScore: r.fullScore,
+      classRank: r.classRank,
+      note: r.note,
+    })
+    msg.info('已载入该成绩，修改后点「更新」即可')
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch = {
+      subject: values.subject,
+      examName: values.examName,
+      date: values.date.format('YYYY-MM-DD'),
+      score: values.score,
+      fullScore: values.fullScore ?? 100,
+      classRank: values.classRank || undefined,
+      note: values.note || '',
+    }
+    updateExam(editingId, patch)
+    msg.success('已更新成绩')
+    setEditingId(null)
+    form.resetFields()
+    if (cloudOn) {
+      const full = useScoreStore.getState().exams.find((r) => r.id === editingId)
+      if (full) feishuSync.pushExam([full as any]).then(() => {}).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    }
+  }
+
   // 通用导入：解析 → 写入 → 报告
   const runImport = (text: string, source: string) => {
     const parsed = parseCsv(text)
@@ -237,7 +275,12 @@ export default function ScoreManager() {
     { title: '得分率', render: (_, r) => `${((r.score / r.fullScore) * 100).toFixed(1)}%` },
     { title: '班排', dataIndex: 'classRank', render: (v) => v ?? '-' },
     { title: '备注', dataIndex: 'note', ellipsis: true },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDeleteExam(r)}>删除</Button> }
+    { title: '操作', width: 120, render: (_, r) => (
+      <Space size={4}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDeleteExam(r)}>删除</Button>
+      </Space>
+    ) }
   ]
 
   const weakColumns: ColumnsType<WeakPoint> = [
@@ -291,8 +334,8 @@ export default function ScoreManager() {
             children: (
               <Row gutter={16}>
                 <Col xs={24} md={8}>
-                  <Card size="small" title="录入一次考试">
-                    <Form form={form} layout="vertical" onFinish={onAdd}>
+                  <Card size="small" title={isEditing ? '编辑该成绩' : '录入一次考试'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                    <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                       <Form.Item name="subject" label="科目" rules={[{ required: true }]}>
                         <Select
                           placeholder="选科目（小学到高中 17 门全集）"
@@ -323,14 +366,14 @@ export default function ScoreManager() {
                       <Form.Item name="note" label="备注（可选）">
                         <Input placeholder="失分原因等" />
                       </Form.Item>
-                      <Button type="primary" htmlType="submit" block>保存</Button>
+                      <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                     </Form>
                   </Card>
                 </Col>
                 <Col xs={24} md={16}>
                   <Card size="small" title={`已录成绩（${exams.length} 条）`}>
                     {exams.length ? (
-                      <Table rowKey="id" size="small" columns={examColumns} dataSource={exams.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                      <Table rowKey="id" size="small" columns={examColumns} dataSource={exams.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                     ) : <Empty description="还没有成绩，先在左侧录入" />}
                   </Card>
                 </Col>

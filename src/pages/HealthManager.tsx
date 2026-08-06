@@ -21,13 +21,17 @@ function newId() {
 }
 
 export default function HealthManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useHealthStore()
+  const { records, addRecord, deleteRecord, updateRecord, clearRecords, syncFromCloud } = useHealthStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  // 编辑状态
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = !!editingId
+  const resetForm = () => { form.resetFields(); setEditingId(null) }
 
   // 按日期升序（趋势用）
   const sorted = useMemo(() => [...records].sort((a, b) => a.date.localeCompare(b.date)), [records])
@@ -125,6 +129,43 @@ export default function HealthManager() {
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteHealth([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
   }
+  const onEdit = (r: HealthRecord) => {
+    setEditingId(r.id)
+    form.setFieldsValue({
+      date: dayjs(r.date),
+      height: r.height,
+      weight: r.weight,
+      visionLeft: r.visionLeft,
+      visionRight: r.visionRight,
+      sleepHours: r.sleepHours,
+      exerciseMin: r.exerciseMin,
+      mood: r.mood,
+      note: r.note,
+    })
+    msg.info('已载入该记录，修改后点「更新」即可')
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch = {
+      date: values.date.format('YYYY-MM-DD'),
+      height: values.height || undefined,
+      weight: values.weight || undefined,
+      visionLeft: values.visionLeft || undefined,
+      visionRight: values.visionRight || undefined,
+      sleepHours: values.sleepHours || undefined,
+      exerciseMin: values.exerciseMin || undefined,
+      mood: values.mood || undefined,
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    msg.success('已更新身心记录')
+    setEditingId(null)
+    form.resetFields()
+    if (cloudOn) {
+      const full = useHealthStore.getState().records.find((r) => r.id === editingId)
+      if (full) feishuSync.pushHealth([full as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    }
+  }
 
   const columns: ColumnsType<HealthRecord> = [
     { title: '日期', dataIndex: 'date', width: 110 },
@@ -136,7 +177,12 @@ export default function HealthManager() {
     { title: '运动min', dataIndex: 'exerciseMin', render: (v) => v ?? '-' },
     { title: '情绪', dataIndex: 'mood', width: 70, render: (v) => v ? <Tag color={MOOD_COLOR[v]}>{v}</Tag> : '-' },
     { title: '备注', dataIndex: 'note', ellipsis: true },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> }
+    { title: '操作', width: 120, render: (_, r) => (
+      <Space size={4}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+      </Space>
+    ) }
   ]
 
   return (
@@ -156,8 +202,8 @@ export default function HealthManager() {
             children: (
               <Row gutter={16}>
                 <Col xs={24} md={8}>
-                  <Card size="small" title="录入一次测量/打卡">
-                    <Form form={form} layout="vertical" onFinish={onAdd}>
+                  <Card size="small" title={isEditing ? '编辑该记录' : '录入一次测量/打卡'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                    <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                       <Form.Item name="date" label="日期" rules={[{ required: true }]}>
                         <DatePicker style={{ width: '100%' }} />
                       </Form.Item>
@@ -185,7 +231,7 @@ export default function HealthManager() {
                       <Form.Item name="note" label="备注（可选）">
                         <Input placeholder="如 感冒/换季/比赛后" />
                       </Form.Item>
-                      <Button type="primary" htmlType="submit" block>保存</Button>
+                      <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                     </Form>
                   </Card>
                 </Col>
@@ -194,7 +240,7 @@ export default function HealthManager() {
                     extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}
                   >
                     {records.length ? (
-                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                     ) : <Empty description="还没有记录，先在左侧录入" />}
                   </Card>
                 </Col>

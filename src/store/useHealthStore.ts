@@ -30,6 +30,7 @@ interface HealthState {
   records: HealthRecord[]
   addRecord: (r: Omit<HealthRecord, 'id'> & { id?: string }) => void
   deleteRecord: (id: string) => void
+  updateRecord: (id: string, patch: Partial<HealthRecord>) => void
   clearRecords: () => void
   syncFromCloud: () => Promise<{ ok: boolean; count?: number; error?: string }>
 }
@@ -67,6 +68,7 @@ export const useHealthStore = create<HealthState>()(
       ],
       addRecord: (r) => set((s) => ({ records: [...s.records, { ...r, id: (r as any).id || uid() }] })),
       deleteRecord: (id) => set((s) => ({ records: s.records.filter((x) => x.id !== id) })),
+      updateRecord: (id, patch) => set((s) => ({ records: s.records.map((r) => (r.id === id ? { ...r, ...patch } : r)) })),
       clearRecords: () => set({ records: [] }),
       syncFromCloud: async () => {
         if (!getCloudSync() || !getFcUrl()) return { ok: false, error: '未开启云同步或未配置地址' }

@@ -40,6 +40,7 @@ interface ScoreState {
   weakPoints: WeakPoint[]
   addExam: (e: Omit<ExamRecord, 'id'> & { id?: string }) => void
   deleteExam: (id: string) => void
+  updateExam: (id: string, patch: Partial<ExamRecord>) => void
   importWeakPoints: (rows: Omit<WeakPoint, 'id'>[]) => { inserted: number; duplicate: number }
   updateWeakStatus: (id: string, status: WeakStatus) => void
   clearWeakPoints: () => void
@@ -69,6 +70,7 @@ export const useScoreStore = create<ScoreState>()(
       ],
       addExam: (e) => set((s) => ({ exams: [...s.exams, { ...e, id: (e as any).id || uid() }] })),
       deleteExam: (id) => set((s) => ({ exams: s.exams.filter((x) => x.id !== id) })),
+      updateExam: (id, patch) => set((s) => ({ exams: s.exams.map((e) => (e.id === id ? { ...e, ...patch } : e)) })),
       importWeakPoints: (rows) => {
         // 去重指纹：(科目, 知识点, 错因) 三元组，去掉首尾空格
         const fp = (r: Pick<WeakPoint, 'subject' | 'knowledge' | 'reason'>) =>
