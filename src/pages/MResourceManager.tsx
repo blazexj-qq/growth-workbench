@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, DatePicker, Button, Table, Tag,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select
@@ -18,13 +19,16 @@ function newId() {
 }
 
 export default function MResourceManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useResourceStore()
+  const { records, addRecord, deleteRecord, updateRecord, clearRecords, syncFromCloud } = useResourceStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = editingId !== null
+  const resetForm = () => { setEditingId(null); form.resetFields() }
 
   const catCounts = useMemo(() => {
     const m: Record<string, number> = {}
@@ -59,6 +63,33 @@ export default function MResourceManager() {
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteResource([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
   }
+  const onEdit = (r: ResourceRecord) => {
+    form.setFieldsValue({
+      date: dayjs(r.date),
+      name: r.name || '',
+      category: r.category || '其他',
+      source: r.source || '',
+      status: r.status || '在用',
+      note: r.note || '',
+    })
+    setEditingId(r.id)
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch = {
+      date: values.date.format('YYYY-MM-DD'),
+      name: values.name || '',
+      category: values.category || '其他',
+      source: values.source || '',
+      status: values.status || '在用',
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    const updated = { id: editingId, ...patch }
+    msg.success('已更新资源')
+    if (cloudOn) feishuSync.pushResource([updated as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    resetForm()
+  }
 
   const columns: ColumnsType<ResourceRecord> = [
     { title: '日期', dataIndex: 'date', width: 100 },
@@ -66,7 +97,12 @@ export default function MResourceManager() {
     { title: '类别', dataIndex: 'category', width: 100, render: (v: string) => <Tag color="cyan">{v || '-'}</Tag> },
     { title: '来源', dataIndex: 'source', width: 100, render: (v: string) => v || '-' },
     { title: '状态', dataIndex: 'status', width: 84, render: (v: string) => <Tag color="gold">{v || '-'}</Tag> },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> },
+    { title: '操作', width: 120, render: (_, r) => (
+      <Space size={0}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+      </Space>
+    ) },
   ]
 
   return (
@@ -87,15 +123,15 @@ export default function MResourceManager() {
           children: (
             <Row gutter={16}>
               <Col xs={24} md={8}>
-                <Card size="small" title="录入一项资源/人脉">
-                  <Form form={form} layout="vertical" onFinish={onAdd}>
+                  <Card size="small" title={isEditing ? '编辑该资源' : '录入一项资源/人脉'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                    <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                     <Form.Item name="date" label="日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item>
                     <Form.Item name="name" label="资源名称" rules={[{ required: true }]}><Input placeholder="如 数学思维训练书 / 表姐" /></Form.Item>
                     <Form.Item name="category" label="类别" initialValue="其他"><Select options={RESOURCE_CATS.map((d) => ({ label: d, value: d }))} /></Form.Item>
                     <Form.Item name="source" label="来源/渠道"><Input placeholder="如 网购/家庭/机构" /></Form.Item>
                     <Form.Item name="status" label="状态" initialValue="在用"><Select options={RESOURCE_STATUS.map((s) => ({ label: s, value: s }))} /></Form.Item>
                     <Form.Item name="note" label="备注（可选）"><Input placeholder="如 可借阅对象" /></Form.Item>
-                    <Button type="primary" htmlType="submit" block>保存</Button>
+                    <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                   </Form>
                 </Card>
               </Col>
@@ -103,7 +139,7 @@ export default function MResourceManager() {
                 <Card size="small" title={`已录资源（${records.length} 条）`}
                   extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}>
                   {records.length ? (
-                    <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                    <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                   ) : <Empty description="还没有记录，先在左侧录入" />}
                 </Card>
               </Col>

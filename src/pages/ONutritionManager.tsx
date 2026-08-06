@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Form, Input, InputNumber, DatePicker, Button, Table, Tag,
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Progress
@@ -21,13 +22,16 @@ function newId() {
 const WATER_REF = 1200
 
 export default function ONutritionManager() {
-  const { records, addRecord, deleteRecord, clearRecords, syncFromCloud } = useNutritionStore()
+  const { records, addRecord, deleteRecord, updateRecord, clearRecords, syncFromCloud } = useNutritionStore()
   const { message: msg } = App.useApp()
 
   // 云同步：全站共享配置，hook 响应式获取
   const cloudOn = useCloudOn()
   useEffect(() => { if (cloudOn) syncFromCloud() /* eslint-disable-next-line */ }, [cloudOn])
   const [form] = Form.useForm()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const isEditing = editingId !== null
+  const resetForm = () => { setEditingId(null); form.resetFields() }
 
   // 按日期升序
   const sorted = useMemo(() => [...records].sort((a, b) => a.date.localeCompare(b.date)), [records])
@@ -106,6 +110,37 @@ export default function ONutritionManager() {
     deleteRecord(r.id)
     if (cloudOn) feishuSync.deleteNutrition([r.id]).catch((e) => msg.warning('飞书删除失败：' + e.message))
   }
+  const onEdit = (r: NutritionRecord) => {
+    form.setFieldsValue({
+      date: dayjs(r.date),
+      breakfast: r.breakfast || '',
+      lunch: r.lunch || '',
+      dinner: r.dinner || '',
+      snack: r.snack || '',
+      waterMl: r.waterMl != null ? r.waterMl : undefined,
+      supplement: r.supplement || '',
+      note: r.note || '',
+    })
+    setEditingId(r.id)
+  }
+  const onUpdate = (values: any) => {
+    if (!editingId) return
+    const patch = {
+      date: values.date.format('YYYY-MM-DD'),
+      breakfast: values.breakfast || '',
+      lunch: values.lunch || '',
+      dinner: values.dinner || '',
+      snack: values.snack || '',
+      waterMl: values.waterMl != null && values.waterMl !== '' ? Number(values.waterMl) : undefined,
+      supplement: values.supplement || '',
+      note: values.note || '',
+    }
+    updateRecord(editingId, patch)
+    const updated = { id: editingId, ...patch }
+    msg.success('已更新膳食记录')
+    if (cloudOn) feishuSync.pushNutrition([updated as any]).catch((e) => msg.warning('已存本地，飞书同步失败：' + e.message))
+    resetForm()
+  }
 
   const columns: ColumnsType<NutritionRecord> = [
     { title: '日期', dataIndex: 'date', width: 110 },
@@ -117,7 +152,12 @@ export default function ONutritionManager() {
     { title: '补充', dataIndex: 'supplement', width: 80, ellipsis: true, render: (v: string) => v || '-' },
     { title: '餐数', width: 64, render: (_, r) => <Tag color="#6366F1">{mealCount(r)}/4</Tag> },
     { title: '备注', dataIndex: 'note', ellipsis: true },
-    { title: '操作', width: 70, render: (_, r) => <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button> },
+    { title: '操作', width: 120, render: (_, r) => (
+      <Space size={0}>
+        <Button type="link" size="small" disabled={isEditing && editingId !== r.id} onClick={() => onEdit(r)}>编辑</Button>
+        <Button type="link" danger size="small" onClick={() => onDelete(r)}>删除</Button>
+      </Space>
+    ) },
   ]
 
   return (
@@ -137,8 +177,8 @@ export default function ONutritionManager() {
             children: (
               <Row gutter={16}>
                 <Col xs={24} md={8}>
-                  <Card size="small" title="录入一天饮食">
-                    <Form form={form} layout="vertical" onFinish={onAdd}>
+                  <Card size="small" title={isEditing ? '编辑该膳食记录' : '录入一天饮食'} extra={isEditing ? <Button size="small" onClick={resetForm}>取消编辑</Button> : null} style={isEditing ? { borderColor: '#0EA5A4' } : undefined}>
+                    <Form form={form} layout="vertical" onFinish={isEditing ? onUpdate : onAdd}>
                       <Form.Item name="date" label="日期" rules={[{ required: true }]}>
                         <DatePicker style={{ width: '100%' }} />
                       </Form.Item>
@@ -163,7 +203,7 @@ export default function ONutritionManager() {
                       <Form.Item name="note" label="备注 (可选)">
                         <Input placeholder="挑食 / 外食 / 过敏等" />
                       </Form.Item>
-                      <Button type="primary" htmlType="submit" block>保存</Button>
+                      <Button type="primary" htmlType="submit" block>{isEditing ? '更新记录' : '保存'}</Button>
                     </Form>
                   </Card>
                 </Col>
@@ -172,7 +212,7 @@ export default function ONutritionManager() {
                     extra={records.length ? <Button size="small" danger onClick={() => { clearRecords(); msg.success('已清空') }}>清空</Button> : null}
                   >
                     {records.length ? (
-                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} />
+                      <Table rowKey="id" size="small" columns={columns} dataSource={records.slice().sort((a, b) => b.date.localeCompare(a.date))} pagination={false} scroll={{ x: 'max-content', y: 320 }} rowClassName={(r) => (r.id === editingId ? 'row-editing' : '')} />
                     ) : <Empty description="还没有记录，先在左侧录入" />}
                   </Card>
                 </Col>
