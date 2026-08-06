@@ -1,4 +1,5 @@
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import { growth } from '../data/sample'
 
 // 成长曲线 mini（对应身心发育 B 模块；ECharts 为开发方案指定图表库）
@@ -33,5 +34,5 @@ export default function GrowthMiniChart() {
       }
     ]
   }
-  return <ReactECharts option={option} style={{ height: 220 }} notMerge lazyUpdate />
+  return <ReactEChartsCore echarts={echarts} option={option} style={{ height: 220 }} notMerge lazyUpdate />
 }

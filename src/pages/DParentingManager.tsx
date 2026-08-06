@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Progress, Select
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useParentingStore, PARENTING_TYPES,
   type ParentingRecord
@@ -263,10 +264,10 @@ export default function DParentingManager() {
                 {sorted.length ? (
                   <>
                     <Card size="small" title="陪伴时长趋势（分钟）">
-                      <ReactECharts option={durOption} style={{ height: 260 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={durOption} style={{ height: 260 }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="孩子情绪 vs 家长情绪（1-5，越高越愉悦）">
-                      <ReactECharts option={moodOption} style={{ height: 260 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={moodOption} style={{ height: 260 }} notMerge lazyUpdate />
                     </Card>
                   </>
                 ) : <Empty description="暂无数据" />}

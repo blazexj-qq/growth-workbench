@@ -42,6 +42,45 @@ export function useCloudOn(): boolean {
   return on
 }
 
+// ===== 同步健康检查：记录"上次成功通信"与"上次失败"，供设置页角标展示 =====
+// 埋点逻辑统一收口在 post()：所有 push/pull/ping 都经过它，无需改 18 个 store。
+const LS_LAST_SYNC = "growth-workbench-last-sync";
+const LS_LAST_ERR = "growth-workbench-last-sync-err";
+const EVT_SYNC = "growth:sync-health";
+
+function touchSync(ok: boolean, errText?: string) {
+  if (ok) {
+    localStorage.setItem(LS_LAST_SYNC, new Date().toISOString());
+    localStorage.removeItem(LS_LAST_ERR);
+  } else if (errText) {
+    localStorage.setItem(LS_LAST_ERR, JSON.stringify({ at: new Date().toISOString(), msg: errText }));
+  }
+  window.dispatchEvent(new Event(EVT_SYNC));
+}
+
+export function getLastSync(): string {
+  return localStorage.getItem(LS_LAST_SYNC) || "";
+}
+export function getLastSyncErr(): { at: string; msg: string } | null {
+  const s = localStorage.getItem(LS_LAST_ERR);
+  if (!s) return null;
+  try { return JSON.parse(s); } catch { return null; }
+}
+// 响应式同步健康 hook：同步成功/失败时通过 EVT_SYNC 刷新，跨 tab 也监听 storage 事件
+export function useSyncHealth(): { lastSync: string; lastErr: { at: string; msg: string } | null } {
+  const [h, setH] = useState(() => ({ lastSync: getLastSync(), lastErr: getLastSyncErr() }));
+  useEffect(() => {
+    const refresh = () => setH({ lastSync: getLastSync(), lastErr: getLastSyncErr() });
+    window.addEventListener(EVT_SYNC, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(EVT_SYNC, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+  return h;
+}
+
 // 读伴 ReadingBuddy 公网地址（仅存本机 localStorage，不设密钥）
 const LS_READBUDDY_URL = "growth-workbench-readbuddy-url";
 export function getReadBuddyUrl(): string {
@@ -273,14 +312,20 @@ export interface PrivacyRecordLite {
 
 async function post(path: string, body: any): Promise<any> {
   const base = getFcUrl();
-  if (!base) throw new Error("未配置同步地址");
-  const res = await fetch(base + path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error("同步失败：" + res.status);
-  return res.json();
+  try {
+    if (!base) throw new Error("未配置同步地址");
+    const res = await fetch(base + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("同步失败：" + res.status);
+    touchSync(true);
+    return res.json();
+  } catch (e: any) {
+    touchSync(false, e?.message || "同步失败");
+    throw e;
+  }
 }
 
 export const feishuSync = {

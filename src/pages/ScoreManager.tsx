@@ -5,7 +5,8 @@ import {
   Alert, Upload
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import dayjs from 'dayjs'
 import { useScoreStore, SUBJECTS, SUBJECT_REFERENCE, type ExamRecord, type Subject, type WeakPoint, type WeakStatus } from '../store/useScoreStore'
 import { feishuSync, useCloudOn } from '../store/feishuSync'
@@ -385,7 +386,7 @@ export default function ScoreManager() {
             label: '趋势分析',
             children: (
               <Card size="small" title="各科得分率趋势">
-                {exams.length ? <ReactECharts option={trendOption} style={{ height: 320 }} notMerge lazyUpdate /> : <Empty description="暂无数据" />}
+                {exams.length ? <ReactEChartsCore echarts={echarts} option={trendOption} style={{ height: 320 }} notMerge lazyUpdate /> : <Empty description="暂无数据" />}
               </Card>
             )
           },

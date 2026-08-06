@@ -4,7 +4,8 @@ import {
   Empty, Statistic, Row, Col, Space, App, Divider, Switch, Alert, Select
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import dayjs from 'dayjs'
 import {
   useHealthStore, calcBmi, bmiCategory, VISION_WATCH,
@@ -260,13 +261,13 @@ export default function HealthManager() {
                 {sorted.length ? (
                   <>
                     <Card size="small" title="生长曲线（身高 / 体重 / BMI）">
-                      <ReactECharts option={growthOption} style={{ height: 300 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={growthOption} style={{ height: 300 }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="视力趋势（对数视力，虚线为 4.8 关注线）">
-                      <ReactECharts option={visionOption} style={{ height: 280 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={visionOption} style={{ height: 280 }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="睡眠与运动打卡">
-                      <ReactECharts option={habitOption} style={{ height: 280 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={habitOption} style={{ height: 280 }} notMerge lazyUpdate />
                     </Card>
                   </>
                 ) : <Empty description="暂无数据" />}

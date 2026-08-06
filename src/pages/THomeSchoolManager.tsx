@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useHomeSchoolStore, HS_CHANNELS, HS_TYPES,
   type HomeSchoolRecord
@@ -151,7 +152,7 @@ export default function THomeSchoolManager() {
             <Space direction="vertical" style={{ width: '100%' }} size={16}>
               <Alert type="info" showIcon message="本模块仅记录家校沟通客观信息，不评价老师或学校；内容仅供家长回看与跟进。" />
               {records.length ? (
-                <Card size="small" title="家校信息类型分布"><ReactECharts option={typeOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
+                <Card size="small" title="家校信息类型分布"><ReactEChartsCore echarts={echarts} option={typeOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
               ) : <Empty description="暂无数据" />}
             </Space>
           )

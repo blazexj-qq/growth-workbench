@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Progress, Select
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useComprehensiveStore, WUYU_CATS, WUYU_STATUS, SUBJECTS,
   type ComprehensiveRecord
@@ -236,9 +237,9 @@ export default function KComprehensiveManager() {
               <Alert type="info" showIcon message="本模块仅归集五育活动与材料用于查缺补漏，不做「综合素质差/某项不达标」等结论；材料靠拢综评口径即可。" />
               {records.length ? (
                 <>
-                  <Card size="small" title="五育材料数量分布"><ReactECharts option={catOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
+                  <Card size="small" title="五育材料数量分布"><ReactEChartsCore echarts={echarts} option={catOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
                   <Card size="small" title="高考 9 学科材料分布（江苏“3+1+2”）">
-                    <ReactECharts option={subjectOption} style={{ height: 280 }} notMerge lazyUpdate />
+                    <ReactEChartsCore echarts={echarts} option={subjectOption} style={{ height: 280 }} notMerge lazyUpdate />
                   </Card>
                 </>
               ) : <Empty description="暂无数据" />}

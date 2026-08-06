@@ -7,7 +7,8 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { SettingOutlined, QuestionCircleOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useGoalStore, GOAL_CATS, GOAL_STATUS,
   type GoalRecord
@@ -320,10 +321,10 @@ export default function IGoalManager() {
                         </Popover>
                       }
                     >
-                      <ReactECharts option={barOption} style={{ height: Math.max(mobile ? 280 : 220, records.length * (mobile ? 56 : 40)) }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={barOption} style={{ height: Math.max(mobile ? 280 : 220, records.length * (mobile ? 56 : 40)) }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="状态分布">
-                      <ReactECharts option={pieOption} style={{ height: 260 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={pieOption} style={{ height: 260 }} notMerge lazyUpdate />
                     </Card>
                   </>
                 ) : <Empty description="暂无数据" />}

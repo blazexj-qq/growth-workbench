@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select, Statistic, Tooltip
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useInterestStore, READ_MODES,
   INTEREST_CATEGORIES, INTELLIGENCE_DIMS,
@@ -512,7 +513,7 @@ export default function CInterestManager() {
                   <>
                     <Card size="small" title="各兴趣大类活动次数">
                       {byCat.length >= 3 ? (
-                        <ReactECharts option={catBarOption} style={{ height: 260 + byCat.length * 4 }} notMerge lazyUpdate />
+                        <ReactEChartsCore echarts={echarts} option={catBarOption} style={{ height: 260 + byCat.length * 4 }} notMerge lazyUpdate />
                       ) : byCat.length ? (
                         <Row gutter={12}>
                           {byCat.map((d) => (
@@ -529,7 +530,7 @@ export default function CInterestManager() {
                     </Card>
                     <Card size="small" title="4 大信号趋势（1-5，越高越强）">
                       {dates.length >= 5 ? (
-                        <ReactECharts option={sigLineOption} style={{ height: 280 }} notMerge lazyUpdate />
+                        <ReactEChartsCore echarts={echarts} option={sigLineOption} style={{ height: 280 }} notMerge lazyUpdate />
                       ) : (
                         <Alert type="info" showIcon message={`数据积累中：已记录 ${dates.length} 个不同日期，满 5 次后自动显示趋势线（还差 ${Math.max(0, 5 - dates.length)} 次记录）。这样避免仅凭 2-3 个点就误读成"下滑趋势"。`} />
                       )}
@@ -577,7 +578,7 @@ export default function CInterestManager() {
 
                     {/* 8 大智能雷达图 */}
                     <Card size="small" title="加德纳 8 大智能信号分布（雷达图）">
-                      <ReactECharts option={radarOption} style={{ height: 360 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={radarOption} style={{ height: 360 }} notMerge lazyUpdate />
                       <div style={{ color: '#94A3B8', fontSize: 12, marginTop: 8 }}>
                         每个智能维度只统计同时填了 3 个信号（自发性+沉浸度+表现）的记录；样本不足的维度显示为 0，多录几次数据会更准。
                       </div>

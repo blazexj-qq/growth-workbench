@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select, InputNumber
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useExperienceStore, EXP_FORMS,
   type ExperienceRecord
@@ -182,9 +183,9 @@ export default function RExperienceManager() {
             <Space direction="vertical" style={{ width: '100%' }} size={16}>
               {records.length ? (
                 <>
-                  <Card size="small" title="体验形式分布"><ReactECharts option={formOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
+                  <Card size="small" title="体验形式分布"><ReactEChartsCore echarts={echarts} option={formOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
                   {ratingSorted.length ? (
-                    <Card size="small" title="兴趣评分趋势（按日期）"><ReactECharts option={ratingOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
+                    <Card size="small" title="兴趣评分趋势（按日期）"><ReactEChartsCore echarts={echarts} option={ratingOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
                   ) : null}
                 </>
               ) : <Empty description="暂无数据" />}

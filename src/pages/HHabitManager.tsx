@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select, Progress
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useHabitStore,
   type HabitRecord
@@ -218,10 +219,10 @@ export default function HHabitManager() {
                 {sorted.length ? (
                   <>
                     <Card size="small" title="每日完成率趋势（%）">
-                      <ReactECharts option={completionOption} style={{ height: 260 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={completionOption} style={{ height: 260 }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="各习惯坚持率（累计完成 / 总记录）">
-                      <ReactECharts option={habitBarOption} style={{ height: Math.max(200, habitStats.length * 36) }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={habitBarOption} style={{ height: Math.max(200, habitStats.length * 36) }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="习惯坚持度明细">
                       <Row gutter={[12, 12]}>

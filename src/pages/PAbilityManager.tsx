@@ -6,7 +6,8 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { SettingOutlined, QuestionCircleOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useAbilityStore, abilityAvg, ABILITY_DIMS,
   type AbilityRecord
@@ -241,10 +242,10 @@ export default function PAbilityManager() {
                 {sorted.length ? (
                   <>
                     <Card size="small" title="能力雷达（首次 vs 最新）">
-                      <ReactECharts option={radarOption} style={{ height: 360 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={radarOption} style={{ height: 360 }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="综合分趋势（各维度平均，1-5）">
-                      <ReactECharts option={trendOption} style={{ height: 280 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={trendOption} style={{ height: 280 }} notMerge lazyUpdate />
                     </Card>
                   </>
                 ) : <Empty description="暂无数据" />}

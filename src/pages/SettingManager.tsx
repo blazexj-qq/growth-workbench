@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import dayjs from 'dayjs'
 import {
   Card, Tabs, Input, Button, Switch, Space, App, Alert, Form, DatePicker, Tag, Tooltip,
   Empty, Row, Col, Statistic, Divider, Modal, message as antdMsg
@@ -11,7 +12,7 @@ import {
 import {
   getFcUrl, setFcUrl, getCloudSync, setCloudSync,
   getReadBuddyUrl, setReadBuddyUrl,
-  feishuSync, useCloudOn
+  feishuSync, useCloudOn, useSyncHealth
 } from '../store/feishuSync'
 import { useAppStore } from '../store/useAppStore'
 
@@ -62,6 +63,18 @@ export default function SettingManager() {
   const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [pingResult, setPingResult] = useState<{ ok: boolean; text: string } | null>(null)
   const liveOn = useCloudOn() // 实时跟随 localStorage 变化的全局开关
+
+  // 同步健康：上次成功时间 + 上次失败（来自 feishuSync 的 localStorage 埋点）
+  const { lastSync, lastErr } = useSyncHealth()
+  const fmtSync = (iso: string) => (iso ? dayjs(iso).format('MM-DD HH:mm') : '从未')
+  const syncHealth = useMemo(() => {
+    if (lastErr && (!lastSync || new Date(lastErr.at).getTime() > new Date(lastSync).getTime()))
+      return { text: '上次同步出错', color: '#EF4444' }
+    if (!lastSync) return { text: '从未同步', color: '#94A3B8' }
+    const diffH = (Date.now() - new Date(lastSync).getTime()) / 3600000
+    if (diffH <= 24) return { text: '正常（24h内）', color: '#0EA5A4' }
+    return { text: '较久未同步', color: '#F59E0B' }
+  }, [lastSync, lastErr])
 
   // 读伴地址
   const [rbUrl, setRbUrlInput] = useState(getReadBuddyUrl())
@@ -284,7 +297,7 @@ export default function SettingManager() {
                 <Col xs={24} md={10}>
                   <Card size="small" title="同步状态速览">
                     <Row gutter={8}>
-                      <Col span={12}>
+                      <Col span={8}>
                         <Statistic
                           title="已配置地址"
                           value={fcUrl ? '是' : '否'}
@@ -292,7 +305,7 @@ export default function SettingManager() {
                           prefix={fcUrl ? <CheckCircleTwoTone twoToneColor="#0EA5A4" /> : <CloseCircleTwoTone twoToneColor="#94A3B8" />}
                         />
                       </Col>
-                      <Col span={12}>
+                      <Col span={8}>
                         <Statistic
                           title="云同步"
                           value={liveOn ? '开启' : '关闭'}
@@ -300,8 +313,20 @@ export default function SettingManager() {
                           prefix={liveOn ? <CheckCircleTwoTone twoToneColor="#0EA5A4" /> : <CloseCircleTwoTone twoToneColor="#94A3B8" />}
                         />
                       </Col>
+                      <Col span={8}>
+                        <Statistic
+                          title="上次同步成功"
+                          value={fmtSync(lastSync)}
+                          valueStyle={{ color: syncHealth.color, fontSize: 16 }}
+                          prefix={<span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: syncHealth.color, marginRight: 6, verticalAlign: 'middle' }} />}
+                        />
+                      </Col>
                     </Row>
                     <Divider style={{ margin: '12px 0' }} />
+                    {lastErr && (
+                      <Alert type="error" showIcon style={{ marginBottom: 8 }}
+                        message={`上次同步失败（${dayjs(lastErr.at).format('MM-DD HH:mm')}）：${lastErr.msg}`} />
+                    )}
                     <div style={{ fontSize: 12, color: '#94A3B8' }}>
                       <div>· 数据本地优先：所有录入先存浏览器，关掉开关就退回纯本地。</div>
                       <div>· 开启后：每个模块首次打开会自动从飞书拉取合并。</div>

@@ -4,7 +4,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Progress
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useAdmissionStore,
   type AdmissionRecord
@@ -172,8 +173,8 @@ export default function FAdmissionManager() {
               <Alert type="info" showIcon message="位次为家庭自估算的参考值，非官方排名；本模块仅记录客观分数与目标意向，绝不做「考不上/必须冲某校」等绝对化结论。" />
               {sorted.length ? (
                 <>
-                  <Card size="small" title="总分趋势"><ReactECharts option={scoreOption} style={{ height: 260 }} notMerge lazyUpdate /></Card>
-                  <Card size="small" title="估算位次趋势（越低越好）"><ReactECharts option={rankOption} style={{ height: 260 }} notMerge lazyUpdate /></Card>
+                  <Card size="small" title="总分趋势"><ReactEChartsCore echarts={echarts} option={scoreOption} style={{ height: 260 }} notMerge lazyUpdate /></Card>
+                  <Card size="small" title="估算位次趋势（越低越好）"><ReactEChartsCore echarts={echarts} option={rankOption} style={{ height: 260 }} notMerge lazyUpdate /></Card>
                 </>
               ) : <Empty description="暂无数据" />}
             </Space>

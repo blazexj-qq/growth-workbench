@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Select
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useCareerStore, CAREER_DOMAINS, CAREER_SOURCES, CAREER_STATUS,
   type CareerRecord
@@ -218,8 +219,8 @@ export default function JCareerManager() {
             <Space direction="vertical" style={{ width: '100%' }} size={16}>
               {records.length ? (
                 <>
-                  <Card size="small" title="兴趣方向领域分布"><ReactECharts option={domainOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
-                  <Card size="small" title="探索状态分布"><ReactECharts option={statusOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
+                  <Card size="small" title="兴趣方向领域分布"><ReactEChartsCore echarts={echarts} option={domainOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
+                  <Card size="small" title="探索状态分布"><ReactEChartsCore echarts={echarts} option={statusOption} style={{ height: 280 }} notMerge lazyUpdate /></Card>
                 </>
               ) : <Empty description="暂无数据" />}
             </Space>

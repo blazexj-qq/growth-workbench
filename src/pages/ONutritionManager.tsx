@@ -5,7 +5,8 @@ import {
   Empty, Row, Col, Space, App, Divider, Switch, Alert, Progress
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   useNutritionStore, mealCount,
   type NutritionRecord
@@ -232,10 +233,10 @@ export default function ONutritionManager() {
                 {sorted.length ? (
                   <>
                     <Card size="small" title={`饮水量趋势（橙线为温和参考 ${WATER_REF}ml）`}>
-                      <ReactECharts option={waterOption} style={{ height: 280 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={waterOption} style={{ height: 280 }} notMerge lazyUpdate />
                     </Card>
                     <Card size="small" title="记录餐数（看三餐是否规律，最多 4 餐）">
-                      <ReactECharts option={mealOption} style={{ height: 240 }} notMerge lazyUpdate />
+                      <ReactEChartsCore echarts={echarts} option={mealOption} style={{ height: 240 }} notMerge lazyUpdate />
                     </Card>
                   </>
                 ) : <Empty description="暂无数据" />}
