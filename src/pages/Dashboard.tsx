@@ -158,16 +158,25 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* 模块快捷入口 */}
+      {/* 模块快捷入口：分组标题左置，卡片向右平铺，提升右侧空间利用率 */}
       <Card title="全部模块" style={{ marginTop: 16 }} styles={{ body: { padding: 16 } }}>
         {groups
           .filter((g) => g.modules.length > 0)
           .map((g) => (
-            <div key={g.key} style={{ marginBottom: 16 }}>
-              <Text strong style={{ display: 'block', marginBottom: 10, opacity: 0.7 }}>
-                {g.label}
-              </Text>
-              <Row gutter={[16, 16]}>
+            <div
+              key={g.key}
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '12px 16px',
+                alignItems: 'flex-start',
+                marginBottom: 16,
+              }}
+            >
+              <div style={{ minWidth: 72, paddingTop: 8, flexShrink: 0 }}>
+                <Text strong style={{ opacity: 0.7 }}>{g.label}</Text>
+              </div>
+              <Row gutter={[16, 16]} style={{ flex: 1, minWidth: 260 }}>
                 {g.modules.map((id) => (
                   <Col xs={12} sm={8} md={6} lg={4} key={id}>
                     <ModuleCard id={id} />
